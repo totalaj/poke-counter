@@ -10,7 +10,7 @@ A lightweight customizable pokemon counter for shiny hunters
 - Saving to file
 - Undo/Redo
 - Customization (background, image, text, window size)
-- Odds, and 
+- Setting odds, and cumulative percentage calculation
 - Selecting a pokemon sprite from PokeAPI
 
 ![Pokemon sprite being chosen from PokeAPI popup](img/readme/pokemon-selector.png)
