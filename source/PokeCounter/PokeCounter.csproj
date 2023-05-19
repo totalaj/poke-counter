@@ -1,0 +1,200 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net5.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>icons\pc logo.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="0251Celebi.png" />
+    <None Remove="icons\align-bottom.png" />
+    <None Remove="icons\align-horizontal.png" />
+    <None Remove="icons\align-left.png" />
+    <None Remove="icons\align-right.png" />
+    <None Remove="icons\align-top.png" />
+    <None Remove="icons\align-vertical.png" />
+    <None Remove="icons\all.svg" />
+    <None Remove="icons\arrow-left.png" />
+    <None Remove="icons\arrow-right.png" />
+    <None Remove="icons\bin.png" />
+    <None Remove="icons\brush.png" />
+    <None Remove="icons\catalog.png" />
+    <None Remove="icons\chart-pie.png" />
+    <None Remove="icons\clipboard.png" />
+    <None Remove="icons\close.png" />
+    <None Remove="icons\copy.png" />
+    <None Remove="icons\desktop.png" />
+    <None Remove="icons\discount.png" />
+    <None Remove="icons\download-alt.png" />
+    <None Remove="icons\download.png" />
+    <None Remove="icons\edit.png" />
+    <None Remove="icons\external-link.png" />
+    <None Remove="icons\eyedropper.png" />
+    <None Remove="icons\file-plus.png" />
+    <None Remove="icons\file-text.png" />
+    <None Remove="icons\filter.png" />
+    <None Remove="icons\forward.png" />
+    <None Remove="icons\fullscreen-exit.png" />
+    <None Remove="icons\fullscreen.png" />
+    <None Remove="icons\funnel.png" />
+    <None Remove="icons\grid-four.png" />
+    <None Remove="icons\heart.png" />
+    <None Remove="icons\image.png" />
+    <None Remove="icons\layers.png" />
+    <None Remove="icons\lightning.png" />
+    <None Remove="icons\link-chain.png" />
+    <None Remove="icons\link.png" />
+    <None Remove="icons\menu.png" />
+    <None Remove="icons\minus.png" />
+    <None Remove="icons\palette.png" />
+    <None Remove="icons\paper-clip.png" />
+    <None Remove="icons\percent.png" />
+    <None Remove="icons\plus-box.png" />
+    <None Remove="icons\plus.png" />
+    <None Remove="icons\pokeball icon.png" />
+    <None Remove="icons\pokeball-icon.png" />
+    <None Remove="icons\refresh.png" />
+    <None Remove="icons\reply.png" />
+    <None Remove="icons\save.png" />
+    <None Remove="icons\settings.png" />
+    <None Remove="icons\sliders-alt.png" />
+    <None Remove="icons\star.png" />
+    <None Remove="icons\unfold-less.png" />
+    <None Remove="icons\unfold-more.png" />
+    <None Remove="icons\wrench.png" />
+    <None Remove="icons\zoom-in.png" />
+    <None Remove="icons\zoom-out.png" />
+    <None Remove="images\0251Celebi.png" />
+    <None Remove="images\invalid-setting.png" />
+    <None Remove="invalid-setting.png" />
+    <None Remove="pc file.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Remove="App.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ApplicationDefinition Include="xaml\App.xaml" />
+    <Resource Include="icons\align-bottom.png" />
+    <Resource Include="icons\align-horizontal.png" />
+    <Resource Include="icons\align-left.png" />
+    <Resource Include="icons\align-right.png" />
+    <Resource Include="icons\align-top.png" />
+    <Resource Include="icons\align-vertical.png" />
+    <Resource Include="icons\arrow-left.png" />
+    <Resource Include="icons\arrow-right.png" />
+    <Resource Include="icons\bin.png" />
+    <Resource Include="icons\brush.png" />
+    <Resource Include="icons\catalog.png" />
+    <Resource Include="icons\chart-pie.png" />
+    <Resource Include="icons\clipboard.png" />
+    <Resource Include="icons\close.png" />
+    <Resource Include="icons\copy.png" />
+    <Resource Include="icons\desktop.png" />
+    <Resource Include="icons\discount.png" />
+    <Resource Include="icons\download-alt.png" />
+    <Resource Include="icons\download.png" />
+    <Resource Include="icons\edit.png" />
+    <Resource Include="icons\external-link.png" />
+    <Resource Include="icons\eyedropper.png" />
+    <Resource Include="icons\file-plus.png" />
+    <Resource Include="icons\file-text.png" />
+    <Resource Include="icons\filter.png" />
+    <Resource Include="icons\forward.png" />
+    <Resource Include="icons\fullscreen-exit.png" />
+    <Resource Include="icons\fullscreen.png" />
+    <Resource Include="icons\funnel.png" />
+    <Resource Include="icons\grid-four.png" />
+    <Resource Include="icons\heart.png" />
+    <Resource Include="icons\image.png" />
+    <Resource Include="icons\layers.png" />
+    <Resource Include="icons\lightning.png" />
+    <Resource Include="icons\link-chain.png" />
+    <Resource Include="icons\link.png" />
+    <Resource Include="icons\menu.png" />
+    <Resource Include="icons\minus.png" />
+    <Resource Include="icons\palette.png" />
+    <Resource Include="icons\paper-clip.png" />
+    <Resource Include="icons\percent.png" />
+    <Resource Include="icons\plus-box.png" />
+    <Resource Include="icons\plus.png" />
+    <Resource Include="icons\pokeball-icon.png" />
+    <Resource Include="icons\refresh.png" />
+    <Resource Include="icons\reply.png" />
+    <Resource Include="icons\save.png" />
+    <Resource Include="icons\settings.png" />
+    <Resource Include="icons\sliders-alt.png" />
+    <Resource Include="icons\star.png" />
+    <Resource Include="icons\unfold-less.png" />
+    <Resource Include="icons\unfold-more.png" />
+    <Resource Include="icons\wrench.png" />
+    <Resource Include="icons\zoom-in.png" />
+    <Resource Include="icons\zoom-out.png" />
+    <Resource Include="images\0251Celebi.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="images\invalid-setting.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Ookii.Dialogs.Wpf" Version="5.0.1" />
+    <PackageReference Include="PixiEditor.ColorPicker" Version="3.3.1" />
+    <PackageReference Include="WpfAnimatedGif" Version="2.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\.editorconfig" Link=".editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="ColorPickerPopup.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="SelectPokemonPopup.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="PressAnyButtonPopup.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="SingleValuePopup.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="icons\pc file.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="icons\pc logo.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="ColorPickerPopup.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="SelectPokemonPopup.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="PressAnyButtonPopup.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="SingleValuePopup.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+
+</Project>

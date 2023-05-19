@@ -1,0 +1,324 @@
+﻿<Window x:Name="CounterWindow" x:Class="PokeCounter.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:cmd="clr-namespace:PokeCounter.Commands"
+        xmlns:colorpicker="clr-namespace:ColorPicker;assembly=ColorPicker"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="240" Width="180" ResizeMode="CanResize" WindowStyle="None" Topmost="True" MouseDown="CounterWindow_MouseDown" KeyDown="CounterWindow_KeyDown" SizeChanged="CounterWindow_SizeChanged" Drop="CounterWindow_Drop" AllowDrop="True" KeyUp="CounterWindow_KeyUp" ContextMenuOpening="CounterWindow_ContextMenuOpening" Closing="CounterWindow_Closing" DragLeave="CounterWindow_DragLeave" DragEnter="CounterWindow_DragEnter">
+    <Window.CommandBindings>
+        <CommandBinding Command="cmd:CustomCommands.Save" CanExecute="SaveCommand_CanExecute" Executed="SaveCommand_Executed"/>
+        <CommandBinding Command="cmd:CustomCommands.SaveAs" CanExecute="SaveAsCommand_CanExecute" Executed="SaveAsCommand_Executed"/>
+        <CommandBinding Command="cmd:CustomCommands.Load" CanExecute="LoadProfileCommand_CanExecute" Executed="LoadProfileCommand_Executed"/>
+        <CommandBinding Command="cmd:CustomCommands.New"  CanExecute="NewProfileCommand_CanExecute" Executed="NewProfileCommand_Executed"/>
+        <CommandBinding Command="cmd:CustomCommands.Undo" CanExecute="UndoCommand_CanExecute" Executed="UndoCommand_Executed"/>
+        <CommandBinding Command="cmd:CustomCommands.Redo" CanExecute="RedoCommand_CanExecute" Executed="RedoCommand_Executed"/>
+    </Window.CommandBindings>
+    <Grid>
+        <Grid x:Name="FileDropOverlay" Background="#FF3160FF" Panel.ZIndex="1" Visibility="Collapsed">
+            <Image HorizontalAlignment="Center" Height="100" Margin="0,0,0,0" VerticalAlignment="Center" Width="100" Source="/icons/file-plus.png"/>
+        </Grid>
+        <Image x:Name="BackgroundImage" RenderOptions.BitmapScalingMode="NearestNeighbor" Visibility="Visible" OpacityMask="White" StretchDirection="Both" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top" Source="/images/0251Celebi.png"/>
+        <Label x:Name="HoldEscapeText" Content="Hold escape to exit..." FontSize="10" FontWeight="Bold" HorizontalContentAlignment="Left" VerticalContentAlignment="Top" FontFamily="Global User Interface" FontStretch="Normal" Foreground="Black" Height="35" VerticalAlignment="Top" HorizontalAlignment="Left" Width="180" BorderBrush="White" Visibility="Hidden">
+            <UIElement.RenderTransform>
+                <MatrixTransform/>
+            </UIElement.RenderTransform>
+        </Label>
+        <Label x:Name="SavedText" Content="Saved" FontSize="10" FontWeight="Bold" HorizontalContentAlignment="Left" VerticalContentAlignment="Top" FontFamily="Global User Interface" FontStretch="Normal" Foreground="Black" Height="35" VerticalAlignment="Top" HorizontalAlignment="Left" Width="180" BorderBrush="White" Visibility="Hidden"/>
+        <TextBox x:Name="ResizingText" Text="140:20(1,23123:1)" FontSize="11" FontWeight="Bold" HorizontalContentAlignment="Right" VerticalContentAlignment="Top" FontFamily="Consolas" FontStretch="Normal" Foreground="Black" Height="50" VerticalAlignment="Top" Width="155" HorizontalAlignment="Right" Background="Transparent" BorderBrush="#00ABADB3" Visibility="Hidden">
+            <TextBox.RenderTransform>
+                <MatrixTransform/>
+            </TextBox.RenderTransform>
+        </TextBox>
+        <Grid x:Name="TextGrid" VerticalAlignment="Bottom">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Viewbox StretchDirection="Both" Stretch="Uniform" VerticalAlignment="Top" Height="80" Grid.Row="0">
+                <Label x:Name="MainCounterText" Content="200&#xA;" FontSize="144" FontWeight="Bold" HorizontalContentAlignment="Center" VerticalContentAlignment="Top" FontFamily="Global User Interface" Height="179" Foreground="#FF176606"/>
+            </Viewbox>
+            <Label Grid.Row="1" x:Name="OddsText" Content="11aaBaba" FontSize="11" FontWeight="Bold" HorizontalContentAlignment="Center" VerticalContentAlignment="Top" FontFamily="Consolas" FontStretch="Normal" Foreground="Black" Background="Transparent" BorderBrush="#00ABADB3" Visibility="Visible" HorizontalAlignment="Center" Height="23" VerticalAlignment="Top"/>
+            <Viewbox x:Name="OddsTextMotivationBox" Grid.Row="1" StretchDirection="Both" Stretch="Uniform" Height="30" VerticalAlignment="Bottom" Margin="0,0,0,0">
+                <Label x:Name="OddsTextMotivation" Content="You've got a long ways to go" FontSize="11" FontWeight="Bold" HorizontalContentAlignment="Center" VerticalContentAlignment="Top" FontFamily="Consolas" FontStretch="Normal" Foreground="Black" Background="Transparent" BorderBrush="#00ABADB3" Visibility="Visible" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+            </Viewbox>
+        </Grid>
+        <Grid/>
+    </Grid>
+    <Window.ContextMenu >
+        <ContextMenu x:Name="CounterContextMenu" >
+            <MenuItem x:Name="CurrentFileNameLabel" Header="Hello?" IsEnabled="false">
+                <MenuItem.Icon>
+                    <Image Source="/icons/file-text.png"/>
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Undo" Command="cmd:CustomCommands.Undo">
+                <MenuItem.Icon>
+                    <Image Source="/icons/reply.png"/>
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Command="cmd:CustomCommands.Redo">
+                <MenuItem.Icon>
+                    <Image Source="/icons/forward.png"/>
+                </MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem x:Name="SaveOption" Command="cmd:CustomCommands.Save">
+                <MenuItem.Icon>
+                    <Image Source="/icons/save.png"/>
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Command="cmd:CustomCommands.SaveAs">
+                <MenuItem.Icon>
+                    <Image Source="/icons/save.png"/>
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Command="cmd:CustomCommands.Load">
+                <MenuItem.Icon>
+                    <Image Source="/icons/file-text.png"/>
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="New profile" Command="cmd:CustomCommands.New">
+                <MenuItem.Icon>
+                    <Image Source="/icons/refresh.png"/>
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem x:Name="RecentProfilesOption" Header="Recent Profiles">
+                <MenuItem Header="Clear recent profiles" Click="ClearRecentProfiles_Click">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/close.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem x:Name="CurrentFileFullNameLabel" Header="Hello?" IsEnabled="false"/>
+                <Separator/>
+
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="Value">
+                <MenuItem.Icon>
+                    <Image Source="/icons/edit.png"/>
+                </MenuItem.Icon>
+                <MenuItem Header="Set value" Click="SetValueOption_Click">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/edit.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Reset value" Click="ResetValueOption_Click">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/refresh.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Set increment value" Click="SetIncrementValueOption_Click">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/plus.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="Image">
+                <MenuItem.Icon>
+                    <Image Source="/icons/image.png"/>
+                </MenuItem.Icon>
+                <MenuItem Header="Select image">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/image.png"/>
+                    </MenuItem.Icon>
+                    <MenuItem Header="Select from files" Click="SetImageOption_Click">
+                        <MenuItem.Icon>
+                            <Image Source="/icons/paper-clip.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem x:Name="SelectPokemonOption" Header="Select pokemon" Click="SetImageFromPokemonOption_Click">
+                        <MenuItem.Icon>
+                            <Image Source="/icons/pokeball-icon.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                </MenuItem>
+                <MenuItem Header="Set size">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/fullscreen.png"/>
+                    </MenuItem.Icon>
+                    <MenuItem StaysOpenOnClick="True" IsCheckable="True" x:Name="ImageAlignmentCenterOption" Header="Don't resize" Click="SetImageAlignmentCenterOption_Click">
+                        <MenuItem.Icon>
+                            <Image Source="/icons/close.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem StaysOpenOnClick="True" IsCheckable="True" x:Name="ImageAlignmentFitOption" Header="Fit" Click="SetImageAlignmentFitOption_Click">
+                        <MenuItem.Icon>
+                            <Image Source="/icons/align-horizontal.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem StaysOpenOnClick="True" IsCheckable="True" x:Name="ImageAlignmentSizeToFillOption" Header="Size to fill" Click="SetImageAlignmentSizeToFillOption_Click">
+                        <MenuItem.Icon>
+                            <Image Source="/icons/fullscreen.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem StaysOpenOnClick="True" IsCheckable="True" x:Name="ImageAlignmentStretchOption" Header="Stretch to fill" Click="SetImageAlignmentStretchOption_Click">
+                        <MenuItem.Icon>
+                            <Image Source="/icons/fullscreen-exit.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <Separator/>
+                    <MenuItem x:Name="ImageAlignmentExactOption" Header="Exact size" Click="SetImageAlignmentExactOption_Click">
+                        <MenuItem.Icon>
+                            <Image Source="/icons/edit.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                </MenuItem>
+                <MenuItem Header="Set vertical alignment">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/align-vertical.png"/>
+                    </MenuItem.Icon>
+                    <MenuItem StaysOpenOnClick="True" IsCheckable="True" x:Name="ImageVerticalAlignmentTop" Header="Top" Click="SetImageVerticalAlignmentTop_Click">
+                        <MenuItem.Icon>
+                            <Image Source="/icons/align-top.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem StaysOpenOnClick="True" IsCheckable="True" x:Name="ImageVerticalAlignmentCenter" Header="Center" Click="SetImageVerticalAlignmentCenter_Click">
+                        <MenuItem.Icon>
+                            <Image Source="/icons/align-vertical.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem StaysOpenOnClick="True" IsCheckable="True" x:Name="ImageVerticalAlignmentBottom" Header="Bottom" Click="SetImageVerticalAlignmentBottom_Click">
+                        <MenuItem.Icon>
+                            <Image Source="/icons/align-bottom.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                </MenuItem>
+                <MenuItem Header="Set horizontal alignment">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/align-horizontal.png"/>
+                    </MenuItem.Icon>
+                    <MenuItem StaysOpenOnClick="True" IsCheckable="True" x:Name="ImageHorizontalAlignmentLeft" Header="Left" Click="SetImageHorizontalAlignmentLeft_Click">
+                        <MenuItem.Icon>
+                            <Image Source="/icons/align-left.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem StaysOpenOnClick="True" IsCheckable="True" x:Name="ImageHorizontalAlignmentCenter" Header="Center" Click="SetImageHorizontalAlignmentCenter_Click">
+                        <MenuItem.Icon>
+                            <Image Source="/icons/align-horizontal.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem StaysOpenOnClick="True" IsCheckable="True" x:Name="ImageHorizontalAlignmentRight" Header="Right" Click="SetImageHorizontalAlignmentRight_Click">
+                        <MenuItem.Icon>
+                            <Image Source="/icons/align-right.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                </MenuItem>
+                <MenuItem Header="Set filtering">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/filter.png"/>
+                    </MenuItem.Icon>
+                    <MenuItem StaysOpenOnClick="True" IsCheckable="True" x:Name="ImageFilteringNearestNeighbor" Header="Nearest Neighbor" Click="SetImageFilteringNearestNeighbor_Click">
+                        <MenuItem.Icon>
+                            <Image Source="/icons/grid-four.png" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem StaysOpenOnClick="True" IsCheckable="True" x:Name="ImageFilteringLinear" Header="Linear" Click="SetImageFilteringLinear_Click">
+                        <MenuItem.Icon>
+                            <Image Source="/icons/funnel.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem StaysOpenOnClick="True" IsCheckable="True" x:Name="ImageFilteringHighQuality" Header="High Quality" Click="SetImageFilteringHighQuality_Click">
+                        <MenuItem.Icon>
+                            <Image Source="/icons/star.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                </MenuItem>
+
+            </MenuItem>
+            <MenuItem Header="Color">
+                <MenuItem.Icon>
+                    <Image Source="/icons/palette.png"/>
+                </MenuItem.Icon>
+                <MenuItem x:Name="TextColorOption" Header="Text Color" Click="SetTextColorOption_Click">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/eyedropper.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem x:Name="StatTextColorOption" Header="Stat Text Color" Click="SetStatTextColorOption_Click">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/eyedropper.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem x:Name="BackgroundColorOption" Header="Background Color" Click="SetBackgroundColorOption_Click">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/brush.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
+            <MenuItem StaysOpenOnClick="True" x:Name="ShowOdds" Header="Show odds" IsCheckable="true" IsChecked="True" Checked="ShowOddsOption_Checked" Unchecked="ShowOddsOption_Unchecked" Click="ShowOddsOption_Click"></MenuItem>
+            <MenuItem x:Name="SetTargetOddsOption" Header="Set target odds">
+                <MenuItem.Icon>
+                    <Image Source="/icons/discount.png"/>
+                </MenuItem.Icon>
+                <MenuItem Header="Custom" Click="SetTargetOddsOption_Click">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/chart-pie.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Custom from ratio" Click="SetTargetOddsRatioOption_Click">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/percent.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="4096" Click="SetTargetOddsDirectOption_Click"/>
+                <MenuItem Header="8192" Click="SetTargetOddsDirectOption_Click"/>
+            </MenuItem>
+            <MenuItem Header="Window">
+                <MenuItem.Icon>
+                    <Image Source="/icons/fullscreen.png"/>
+                </MenuItem.Icon>
+                <MenuItem StaysOpenOnClick="True" x:Name="LockSizeOption" Header="Lock size" IsCheckable="true" IsChecked="True" Checked="LockSizeOption_Checked" Unchecked="LockSizeOption_Unchecked" Click="LockSizeOption_Click"></MenuItem>
+                <MenuItem Header="Reset size" Click="ResetSizeOption_Click">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/fullscreen-exit.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Set window size" Click="SetWindowSizeOption_Click">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/fullscreen.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
+            <Separator/>
+            <MenuItem StaysOpenOnClick="True" x:Name="AlwaysOnTopOption" Header="Always on top" IsCheckable="true" IsChecked="True" Checked="AlwaysOnTopOption_Checked" Unchecked="AlwaysOnTopOption_Unchecked" Click="AlwaysOnTopOption_Click"></MenuItem>
+            <MenuItem Header="Actions">
+                <MenuItem.Icon>
+                    <Image Source="/icons/lightning.png"/>
+                </MenuItem.Icon>
+                <MenuItem Header="Setup file association" Click="SetupFileAssociationOption_Click">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/paper-clip.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Get new pokemon data from web" Click="GetNewPokemonData_Click">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/download.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Clear cache" Click="ClearCache_Click">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/bin.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Bind global increment key" Click="BindGlobalIncrementKey_Click">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/plus.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Bind global decrement key" Click="BindGlobalDecrementKey_Click">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/minus.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
+            <MenuItem Header="Exit" Click="CloseOption_Click">
+                <MenuItem.Icon>
+                    <Image Source="/icons/close.png"/>
+                </MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
+    </Window.ContextMenu>
+</Window>

@@ -1,0 +1,22 @@
+﻿<Window x:Name="PopupWindow" x:Class="PokeCounter.ColorPickerPopup"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:colorpicker="clr-namespace:ColorPicker;assembly=ColorPicker"
+        xmlns:local="clr-namespace:PokeCounter"
+        mc:Ignorable="d"
+        Title="Set counter value" Height="255" Width="269" ResizeMode="NoResize" Topmost="True" SizeToContent="WidthAndHeight" IsVisibleChanged="Window_IsVisibleChanged" KeyDown="PopupWindow_KeyDown" Closed="PopupWindow_Closed" MouseDown="PopupWindow_MouseDown">
+    <Window.CommandBindings>
+        <CommandBinding Command="local:ColorPickerPopup.CompleteCommand" CanExecute="CommandBinding_CanExecute" Executed="CommandBinding_Executed"></CommandBinding>
+    </Window.CommandBindings>
+    <Window.InputBindings>
+        <KeyBinding Command="local:ColorPickerPopup.CompleteCommand" Gesture="CTRL+ENTER"/>
+    </Window.InputBindings>
+    <Grid HorizontalAlignment="Center" Width="228" Height="214" VerticalAlignment="Top">
+        <colorpicker:SquarePicker x:Name="valuePropertyA" Height="126" VerticalAlignment="Top" Margin="0,12,0,0" ColorChanged="SquarePicker_ColorChanged"></colorpicker:SquarePicker>
+        <colorpicker:HexColorTextBox x:Name="valuePropertyB" Height="36" VerticalAlignment="Top" Margin="0,143,0,0" ColorChanged="HexColorTextBox_ColorChanged" ShowAlpha="False"></colorpicker:HexColorTextBox>
+        <Button Command="local:ColorPickerPopup.CompleteCommand" x:Name="OKButton" Content="OK" Margin="10,0,0,10" Width="100" HorizontalAlignment="Left" TabIndex="3" Height="25" VerticalAlignment="Bottom"/>
+        <Button x:Name="CancelButton" Content="Cancel" Margin="0,0,10,10" IsCancel="True" Width="100" HorizontalAlignment="Right" TabIndex="4" Height="25" VerticalAlignment="Bottom" Click="CancelButton_Click"/>
+    </Grid>
+</Window>
