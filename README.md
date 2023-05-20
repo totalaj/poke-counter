@@ -35,5 +35,5 @@ Registering icon for associated files requires running with administrator privil
 - Remember window position for easier multiple counter layout
 - More and better keybinding
 - Audio cues
-- CLI
+- Basic application for remote controlling counters
 - Custom shaders with access to stats and count, et cetera
