@@ -20,9 +20,18 @@ A lightweight customizable pokemon counter for shiny hunters
 
 ![PokeCounter in use](img/readme/example.gif)
 
+## Installation
+
+[Refer to this page for download](https://github.com/totalaj/poke-counter/releases)
+
+Simply download the `.zip` file and extract it into a folder of your choosing. No installation needed!
+
 ## Planned features
 
 - Autosave
 - More customizations for text
 - Remember window position for easier multiple counter layout
 - More and better keybinding
+- Audio cues
+- CLI
+- Custom shaders with access to stats and count, et cetera
