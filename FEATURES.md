@@ -22,15 +22,27 @@
 ## actions
 
 `enter` increments the counter (cannot be rebound)
+
 `up` and `down` arrow keys increments/decrements counter (cannot be rebound)
+
 `add` and `subtract` keys increments/decrements counter as global hotkeys (CAN be rebound)
+
 `escape` exits the program when held
+
 `middle-mouse` closes most windows and popups
+
 `right-mouse` opens the context menu, where most functions are found
+
 `enter` or `ctrl+enter` confirms popups
+
 `ctrl+s` saves the counter
+
 `ctrl+shift+s` prompts to save in a new location
+
 `ctrl+z` undoes last action
+
 `ctrl+shift+z` or `ctrl+y` redos actions if undone
+
 `ctrl+o` opens a counter
+
 `ctrl+n` creates a new counter

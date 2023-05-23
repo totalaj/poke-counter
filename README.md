@@ -10,7 +10,7 @@ A lightweight customizable pokemon counter for shiny hunters
 - Saving to file
 - Undo/Redo
 - Customization (background, image, text, window size)
-- Odds, and 
+- Setting odds, and cumulative percentage calculation
 - Selecting a pokemon sprite from PokeAPI
 
 ![Pokemon sprite being chosen from PokeAPI popup](img/readme/pokemon-selector.png)
@@ -20,9 +20,20 @@ A lightweight customizable pokemon counter for shiny hunters
 
 ![PokeCounter in use](img/readme/example.gif)
 
+## Installation
+
+[Refer to this page for download](https://github.com/totalaj/poke-counter/releases)
+
+Simply download the `.zip` file and extract it into a folder of your choosing. No further setup needed!
+
+Registering icon for associated files requires running with administrator privileges
+
 ## Planned features
 
 - Autosave
 - More customizations for text
 - Remember window position for easier multiple counter layout
 - More and better keybinding
+- Audio cues
+- Basic application for remote controlling counters
+- Custom shaders with access to stats and count, et cetera
