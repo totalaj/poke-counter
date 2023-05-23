@@ -5,6 +5,11 @@
     <TargetFramework>net5.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>icons\pc logo.ico</ApplicationIcon>
+    <Configurations>Debug;Release</Configurations>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>TRACE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -133,9 +138,9 @@
     <Resource Include="icons\wrench.png" />
     <Resource Include="icons\zoom-in.png" />
     <Resource Include="icons\zoom-out.png" />
-    <Resource Include="images\0251Celebi.png">
+    <Content Include="images\0251Celebi.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Resource>
+    </Content>
     <Resource Include="images\invalid-setting.png" />
   </ItemGroup>
 
