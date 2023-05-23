@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -10,6 +11,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -84,6 +86,24 @@ namespace PokeCounter
 
         public MainWindow(string startupFile = null)
         {
+            // @todo
+            // Grouping windows together so they move at once together
+            // Exporting and opening a group file
+            // Set filter to smooth
+            // Better keybinds, and keybind normal buttons too
+            // More text customization
+            // Cache window location
+            // Autosave (different save, is applied on ctrl+s)
+            // Could have save recovery in cache?
+            // Better error handling aswell please
+            // Add your own shaders???
+            // Sound for increment/decrement
+            // Set dirty on new file loaded from startup
+            // Deal with closing multiple programs simultaneously
+            // Ctrl+w to close
+            // Ctrl+p to open pokemon menu
+            // Ctrl+d to duplicate current profile
+
             InitializeComponent();
 
             RefreshPokemonDatas();
@@ -105,13 +125,12 @@ namespace PokeCounter
 
             if (currentProfile == null)
             {
-                currentProfile = CounterProfile.CreateDefault();
+                InitializeFromProfile(CounterProfile.CreateDefault(), true);
                 metaSettings.data.lastProfilePath = currentProfile.path;
                 metaSettings.Save();
             }
 
             undoList.PushChange(currentProfile);
-            InitializeFromProfile(currentProfile, true);
 
             new DispatcherTimer(
                 TimeSpan.FromMilliseconds(100), DispatcherPriority.Background,
@@ -135,14 +154,21 @@ namespace PokeCounter
             Dispatcher.BeginInvoke(StartEscapeTracker);
             RefreshAll();
             SetAlwaysOnTopOption(metaSettings.data.topmost, true);
+            SetEdgeHighlights(0);
         }
 
         private void CounterWindow_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                UpdateOtherLayouts();
                 DragMove();
+                FinishDragging();
+            }
             if (e.MiddleButton == MouseButtonState.Pressed)
+            {
                 Close();
+            }
         }
 
         private void CounterWindow_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
@@ -188,7 +214,7 @@ namespace PokeCounter
             metaSettings.Save();
             if (currentProfile.GetIsDirty())
             {
-                var result = System.Windows.MessageBox.Show("You have unsaved changes!\nWould you like to save?", "Wait!", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                var result = System.Windows.MessageBox.Show("You have unsaved changes!\nWould you like to save?", "Wait!", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
 
                 if (result == MessageBoxResult.Yes)
                 {
@@ -207,7 +233,12 @@ namespace PokeCounter
                         e.Cancel = true;
                     }
                 }
+                if (result == MessageBoxResult.Cancel)
+                {
+                    e.Cancel = true;
+                }
             }
+            rcm.BroadcastMessage(Message.Disconnect, rcm.thisWindow.windowHandle.ToInt32());
         }
 
         private void CounterWindow_ContextMenuOpening(object sender, ContextMenuEventArgs e)
@@ -249,6 +280,7 @@ namespace PokeCounter
         }
 
         private void CounterWindow_DragEnter(object sender, System.Windows.DragEventArgs e)
+
         {
             FileDropOverlay.Visibility = IsValidDrop(e) ? Visibility.Visible : Visibility.Collapsed;
             AllowDrop = IsValidDrop(e);
@@ -286,6 +318,338 @@ namespace PokeCounter
             resizeDirtyFlag = true;
             ResizingText.Visibility = Visibility.Visible;
             UpdateResizeText();
+        }
+
+        #endregion
+
+        #region Remote Control Interface
+
+        RemoteControlManager rcm;
+
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+            HwndSource source = PresentationSource.FromVisual(this) as HwndSource;
+            source.AddHook(WndProc);
+            rcm = new RemoteControlManager(this);
+        }
+
+        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            switch ((Message)msg)
+            {
+                case Message.Ping:
+                    {
+                        handled = true;
+                        return new IntPtr(1);
+                    }
+                case Message.Handshake:
+                    {
+                        rcm.AddWindow(wParam);
+                        return rcm.thisWindow.windowHandle;
+                    }
+                case Message.Disconnect:
+                    {
+                        rcm.RemoveWindow(wParam);
+                        break;
+                    }
+                case Message.ReserveQueryHandle:
+                    {
+                        handled = true;
+                        var result = rcm.TryReserveQueryHandle();
+                        if (!result)
+                        {
+                            return new IntPtr(-1);
+                        }
+                        break;
+                    }
+                case Message.DisposeQueryHandle:
+                    {
+                        rcm.TryDisposeQueryHandle();
+                        break;
+                    }
+                case Message.Increment:
+                    {
+                        handled = true;
+                        IncrementCounter(currentProfile.incrementAmount);
+                        break;
+                    }
+                case Message.Decrement:
+                    {
+                        handled = true;
+                        IncrementCounter(-currentProfile.incrementAmount);
+                        break;
+                    }
+                case Message.SetValue:
+                    {
+                        handled = true;
+                        SetCounterValue(wParam.ToInt32());
+                        break;
+                    }
+                case Message.Save:
+                    {
+                        currentProfile.Save();
+                        break;
+                    }
+                case Message.SetEdgeHighlight:
+                    {
+                        handled = true;
+                        SetEdgeHighlights((EdgeHighlight)wParam.ToInt32());
+                        break;
+                    }
+                default:
+                    break;
+            }
+
+            switch ((Post)msg)
+            {
+                case Post.LayoutData:
+                    {
+                        handled = true;
+                        if (rcm.RecieveData(out LayoutData ld))
+                        {
+                            SetLayout(ld);
+                        }
+                        break;
+                    }
+                default:
+                    break;
+            }
+
+            switch ((Query)msg)
+            {
+                case Query.LayoutData:
+                    {
+                        handled = true;
+                        rcm.PostQueryData(GetLayout());
+                        break;
+                    }
+                default:
+                    break;
+            }
+
+            return IntPtr.Zero;
+        }
+
+
+        #endregion
+
+        #region Layout Control
+
+        struct WindowLayoutWrapper
+        {
+            public WindowWrapper window;
+            public LayoutData layout;
+        }
+
+        struct LayoutData
+        {
+            static double ColliderSize = 40, CornerSize = 20;
+            public double WindowWidth, WindowHeight, WindowLeft, WindowTop;
+
+            public Vector Center
+                => new Vector(WindowTop + WindowHeight / 2, WindowLeft + WindowWidth / 2);
+            public Rect AsRect => new Rect(WindowLeft, WindowTop, WindowWidth, WindowHeight);
+
+            // Axies irrelevant to the edge will be 0
+            public Vector GetLocation(EdgeHighlight edge)
+            {
+                switch (edge)
+                {
+                    case EdgeHighlight.Top:
+                        return new Vector(0, WindowTop);
+                    case EdgeHighlight.Left:
+                        return new Vector(WindowLeft, 0);
+                    case EdgeHighlight.Right:
+                        return new Vector(WindowLeft + WindowWidth, 0);
+                    case EdgeHighlight.Down:
+                        return new Vector(0, WindowTop + WindowHeight);
+                    case EdgeHighlight.TopLeft:
+                        return new Vector(WindowLeft, WindowTop);
+                    case EdgeHighlight.TopRight:
+                        return new Vector(WindowLeft + WindowWidth, WindowTop);
+                    case EdgeHighlight.DownLeft:
+                        return new Vector(WindowLeft, WindowTop + WindowHeight);
+                    case EdgeHighlight.DownRight:
+                        return new Vector(WindowLeft + WindowWidth, WindowTop + WindowHeight);
+                    default:
+                        return new Vector();
+                }
+            }
+
+            public Rect GetEdge(EdgeHighlight edge)
+            {
+                switch (edge)
+                {
+
+                    case EdgeHighlight.Top:
+                        return new Rect(WindowLeft, WindowTop - (ColliderSize / 2), WindowWidth, ColliderSize);
+                    case EdgeHighlight.Left:
+                        return new Rect(WindowLeft - (ColliderSize / 2), WindowTop, ColliderSize, WindowHeight);
+                    case EdgeHighlight.Right:
+                        return new Rect((WindowLeft + WindowWidth) - (ColliderSize / 2), WindowTop, ColliderSize, WindowHeight);
+                    case EdgeHighlight.Down:
+                        return new Rect(WindowLeft, (WindowTop + WindowHeight) - (ColliderSize / 2), WindowWidth, ColliderSize);
+                    case EdgeHighlight.TopLeft:
+                        return new Rect(WindowLeft, WindowTop, CornerSize, CornerSize);
+                    case EdgeHighlight.TopRight:
+                        return new Rect(WindowLeft + WindowWidth, WindowTop, CornerSize, CornerSize);
+                    case EdgeHighlight.DownLeft:
+                        return new Rect(WindowLeft, WindowTop + WindowHeight, CornerSize, CornerSize);
+                    case EdgeHighlight.DownRight:
+                        return new Rect(WindowLeft + WindowWidth, WindowTop + WindowHeight, CornerSize, CornerSize);
+                }
+
+                return new Rect();
+            }
+
+        }
+
+        [Flags]
+        enum EdgeHighlight
+        {
+            Top = 1,
+            Left = 2,
+            Right = 4,
+            Down = 8,
+            TopLeft = 16,
+            TopRight = 32,
+            DownLeft = 64,
+            DownRight = 128
+        }
+
+        struct SnapInstruction
+        {
+            public WindowLayoutWrapper targetWindow;
+            public EdgeHighlight targetEdge;
+            public EdgeHighlight sourceEdge;
+        }
+
+        List<WindowLayoutWrapper> otherLayouts = new List<WindowLayoutWrapper>();
+        SnapInstruction bestSnapInstruction;
+
+        void UpdateOtherLayouts()
+        {
+            otherLayouts.Clear();
+
+            foreach (var window in rcm.otherWindows)
+            {
+                otherLayouts.Add(
+                    new WindowLayoutWrapper()
+                    {
+                        window = window,
+                        layout = rcm.Query<LayoutData>(window, Query.LayoutData)
+                    });
+            }
+        }
+
+        void FinishDragging()
+        {
+            foreach (var window in otherLayouts)
+            {
+                rcm.SendMessage(window.window, Message.SetEdgeHighlight, 0);
+            }
+
+            SetEdgeHighlights(0);
+
+            if (otherLayouts.Count > 0)
+            {
+                otherLayouts.Clear();
+            }
+            else
+            {
+                return;
+            }
+
+            LayoutData thisLayout = GetLayout();
+            LayoutData targetLayout = bestSnapInstruction.targetWindow.layout;
+            Vector delta = targetLayout.GetLocation(bestSnapInstruction.targetEdge) - thisLayout.GetLocation(bestSnapInstruction.sourceEdge);
+            Left += delta.X;
+            Top += delta.Y;
+        }
+
+        void SetEdgeHighlights(EdgeHighlight highlight)
+        {
+            WindowTopEdge.Visibility = highlight.HasFlag(EdgeHighlight.Top) ? Visibility.Visible : Visibility.Collapsed;
+            WindowLeftEdge.Visibility = highlight.HasFlag(EdgeHighlight.Left) ? Visibility.Visible : Visibility.Collapsed;
+            WindowRightEdge.Visibility = highlight.HasFlag(EdgeHighlight.Right) ? Visibility.Visible : Visibility.Collapsed;
+            WindowDownEdge.Visibility = highlight.HasFlag(EdgeHighlight.Down) ? Visibility.Visible : Visibility.Collapsed;
+            WindowTopLeftCorner.Visibility = highlight.HasFlag(EdgeHighlight.TopLeft) ? Visibility.Visible : Visibility.Collapsed;
+            WindowTopRightCorner.Visibility = highlight.HasFlag(EdgeHighlight.TopRight) ? Visibility.Visible : Visibility.Collapsed;
+            WindowDownLeftCorner.Visibility = highlight.HasFlag(EdgeHighlight.DownLeft) ? Visibility.Visible : Visibility.Collapsed;
+            WindowDownRightCorner.Visibility = highlight.HasFlag(EdgeHighlight.DownRight) ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        void CompareEdges(LayoutData a, LayoutData b, EdgeHighlight edgeA, EdgeHighlight edgeB, ref EdgeHighlight targetEdge, ref EdgeHighlight sourceEdge, ref EdgeHighlight highlight, ref EdgeHighlight thisHighlight, ref double heuristic, double bias = 0)
+        {
+            if (a.GetEdge(edgeA).IntersectsWith(b.GetEdge(edgeB)))
+            {
+                double distance = (a.GetLocation(edgeA) - b.GetLocation(edgeB)).Length - bias;
+                if (distance < heuristic)
+                {
+                    heuristic = distance;
+                    targetEdge = edgeB;
+                    sourceEdge = edgeA;
+                    highlight |= edgeB;
+                    thisHighlight |= edgeA;
+                }
+            }
+        }
+
+        private void CounterWindow_LocationChanged(object sender, EventArgs e)
+        {
+            LayoutData thisLayout = GetLayout();
+            EdgeHighlight thisHighlight = 0;
+            bestSnapInstruction.targetEdge = 0;
+            bestSnapInstruction.sourceEdge = 0;
+
+            double heuristic = double.MaxValue;
+
+            foreach (var window in otherLayouts)
+            {
+                const double cornerBias = 10;
+
+                EdgeHighlight highlight = 0;
+                EdgeHighlight target = 0, source = 0;
+
+                CompareEdges(thisLayout, window.layout, EdgeHighlight.Top, EdgeHighlight.Down, ref target, ref source, ref highlight, ref thisHighlight, ref heuristic);
+                CompareEdges(thisLayout, window.layout, EdgeHighlight.Down, EdgeHighlight.Top, ref target, ref source, ref highlight, ref thisHighlight, ref heuristic);
+                CompareEdges(thisLayout, window.layout, EdgeHighlight.Left, EdgeHighlight.Right, ref target, ref source, ref highlight, ref thisHighlight, ref heuristic);
+                CompareEdges(thisLayout, window.layout, EdgeHighlight.Right, EdgeHighlight.Left, ref target, ref source, ref highlight, ref thisHighlight, ref heuristic);
+                CompareEdges(thisLayout, window.layout, EdgeHighlight.TopLeft, EdgeHighlight.TopRight, ref target, ref source, ref highlight, ref thisHighlight, ref heuristic, cornerBias);
+                CompareEdges(thisLayout, window.layout, EdgeHighlight.TopRight, EdgeHighlight.TopLeft, ref target, ref source, ref highlight, ref thisHighlight, ref heuristic, cornerBias);
+                CompareEdges(thisLayout, window.layout, EdgeHighlight.DownLeft, EdgeHighlight.DownRight, ref target, ref source, ref highlight, ref thisHighlight, ref heuristic, cornerBias);
+                CompareEdges(thisLayout, window.layout, EdgeHighlight.DownRight, EdgeHighlight.DownLeft, ref target, ref source, ref highlight, ref thisHighlight, ref heuristic, cornerBias);
+                CompareEdges(thisLayout, window.layout, EdgeHighlight.TopRight, EdgeHighlight.DownRight, ref target, ref source, ref highlight, ref thisHighlight, ref heuristic, cornerBias);
+                CompareEdges(thisLayout, window.layout, EdgeHighlight.TopLeft, EdgeHighlight.DownLeft, ref target, ref source, ref highlight, ref thisHighlight, ref heuristic, cornerBias);
+                CompareEdges(thisLayout, window.layout, EdgeHighlight.DownRight, EdgeHighlight.TopRight, ref target, ref source, ref highlight, ref thisHighlight, ref heuristic, cornerBias);
+                CompareEdges(thisLayout, window.layout, EdgeHighlight.DownLeft, EdgeHighlight.TopLeft, ref target, ref source, ref highlight, ref thisHighlight, ref heuristic, cornerBias);
+
+                rcm.SendMessage(window.window, Message.SetEdgeHighlight, (int)highlight);
+                if (highlight != 0)
+                {
+                    bestSnapInstruction.targetWindow = window;
+                    bestSnapInstruction.targetEdge = target;
+                    bestSnapInstruction.sourceEdge = source;
+                }
+            }
+            SetEdgeHighlights(thisHighlight);
+        }
+
+        LayoutData GetLayout() => new LayoutData()
+        {
+            WindowWidth = Width,
+            WindowHeight = Height,
+            WindowLeft = Left,
+            WindowTop = Top
+        };
+
+        private void SetLayout(LayoutData layout)
+        {
+            Width = layout.WindowWidth;
+            Height = layout.WindowHeight;
+            Left = layout.WindowLeft;
+            Top = layout.WindowTop;
         }
 
         #endregion
@@ -340,7 +704,6 @@ namespace PokeCounter
 
             RefreshAll();
         }
-
 
         void SetDirty()
         {
@@ -1010,6 +1373,14 @@ namespace PokeCounter
 
         #region Value
 
+        private void SetCounterValue(int value)
+        {
+            currentProfile.count = value;
+            SetDirty();
+            undoList.PushChange(currentProfile);
+            RefreshAll();
+        }
+
         private void SetValueOption_Click(object sender, RoutedEventArgs e)
         {
             SingleValuePopup popup = new SingleValuePopup("counter value", (int i) => { return i >= 0; });
@@ -1017,10 +1388,7 @@ namespace PokeCounter
 
             if (popup.ShowDialog().GetValueOrDefault(false))
             {
-                currentProfile.count = popup.value;
-                SetDirty();
-                undoList.PushChange(currentProfile);
-                RefreshAll();
+                SetCounterValue(popup.value);
             }
         }
 

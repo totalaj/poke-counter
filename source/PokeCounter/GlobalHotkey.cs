@@ -34,7 +34,7 @@ namespace PokeCounter
             /// Overridden to get the notifications.
             /// </summary>
             /// <param name="m"></param>
-            protected override void WndProc(ref Message m)
+            protected override void WndProc(ref System.Windows.Forms.Message m)
             {
                 base.WndProc(ref m);
 
@@ -95,11 +95,15 @@ namespace PokeCounter
                 {
                     string keyCombo = key.ToString();
                     if (modifier != 0) keyCombo = (modifier.ToString() + "+") + keyCombo;
+#if RELEASE
                     var mResult = System.Windows.Forms.MessageBox.Show($"Failed to register hotkey {keyCombo}!\nTry again?", "Failed", MessageBoxButtons.YesNo);
                     if (mResult == System.Windows.Forms.DialogResult.No)
                     {
                         registerLoop = false;
                     }
+#else
+                    registerLoop = false;
+#endif
                 }
                 else
                 {
@@ -115,7 +119,7 @@ namespace PokeCounter
         /// </summary>
         public event EventHandler<KeyPressedEventArgs> KeyPressed;
 
-        #region IDisposable Members
+#region IDisposable Members
 
         public void Dispose()
         {
@@ -129,7 +133,7 @@ namespace PokeCounter
             _window.Dispose();
         }
 
-        #endregion
+#endregion
     }
 
     /// <summary>

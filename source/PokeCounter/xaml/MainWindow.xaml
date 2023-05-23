@@ -6,7 +6,7 @@
         xmlns:cmd="clr-namespace:PokeCounter.Commands"
         xmlns:colorpicker="clr-namespace:ColorPicker;assembly=ColorPicker"
         mc:Ignorable="d"
-        Title="MainWindow" Height="240" Width="180" ResizeMode="CanResize" WindowStyle="None" Topmost="True" MouseDown="CounterWindow_MouseDown" KeyDown="CounterWindow_KeyDown" SizeChanged="CounterWindow_SizeChanged" Drop="CounterWindow_Drop" AllowDrop="True" KeyUp="CounterWindow_KeyUp" ContextMenuOpening="CounterWindow_ContextMenuOpening" Closing="CounterWindow_Closing" DragLeave="CounterWindow_DragLeave" DragEnter="CounterWindow_DragEnter">
+        Title="PokeCounter Window" Height="240" Width="180" ResizeMode="CanResize" WindowStyle="None" Topmost="True" MouseDown="CounterWindow_MouseDown" KeyDown="CounterWindow_KeyDown" SizeChanged="CounterWindow_SizeChanged" Drop="CounterWindow_Drop" AllowDrop="True" KeyUp="CounterWindow_KeyUp" ContextMenuOpening="CounterWindow_ContextMenuOpening" Closing="CounterWindow_Closing" DragLeave="CounterWindow_DragLeave" DragEnter="CounterWindow_DragEnter" LocationChanged="CounterWindow_LocationChanged">
     <Window.CommandBindings>
         <CommandBinding Command="cmd:CustomCommands.Save" CanExecute="SaveCommand_CanExecute" Executed="SaveCommand_Executed"/>
         <CommandBinding Command="cmd:CustomCommands.SaveAs" CanExecute="SaveAsCommand_CanExecute" Executed="SaveAsCommand_Executed"/>
@@ -16,6 +16,16 @@
         <CommandBinding Command="cmd:CustomCommands.Redo" CanExecute="RedoCommand_CanExecute" Executed="RedoCommand_Executed"/>
     </Window.CommandBindings>
     <Grid>
+        <Grid Panel.ZIndex="2">
+            <Canvas x:Name="WindowTopEdge" Background="#FF0023FF" Margin="20,0,20,0" VerticalAlignment="Top" Height="12"/>
+            <Canvas x:Name="WindowDownEdge" Background="#FF0023FF" Margin="20,0,20,0" Height="12" VerticalAlignment="Bottom"/>
+            <Canvas x:Name="WindowTopRightCorner" Background="#FF0023FF" Margin="0,0,0,0" VerticalAlignment="Top" Height="12" Width="12" HorizontalAlignment="Right"/>
+            <Canvas x:Name="WindowTopLeftCorner" Background="#FF0023FF" Margin="0,0,0,0" VerticalAlignment="Top" Height="12" Width="12" HorizontalAlignment="Left"/>
+            <Canvas x:Name="WindowDownLeftCorner" Background="#FF0023FF" Margin="0,0,0,0" VerticalAlignment="Bottom" Height="12" Width="12" HorizontalAlignment="Left"/>
+            <Canvas x:Name="WindowDownRightCorner" Background="#FF0023FF" Margin="0,0,0,0" VerticalAlignment="Bottom" Height="12" Width="12" HorizontalAlignment="Right"/>
+            <Canvas x:Name="WindowRightEdge" Background="#FF0023FF" Margin="0,20,0,20" VerticalAlignment="Stretch" HorizontalAlignment="Right" Width="12"/>
+            <Canvas x:Name="WindowLeftEdge" Background="#FF0023FF" Margin="0,20,0,20" HorizontalAlignment="Left" Width="12"/>
+        </Grid>
         <Grid x:Name="FileDropOverlay" Background="#FF3160FF" Panel.ZIndex="1" Visibility="Collapsed">
             <Image HorizontalAlignment="Center" Height="100" Margin="0,0,0,0" VerticalAlignment="Center" Width="100" Source="/icons/file-plus.png"/>
         </Grid>
