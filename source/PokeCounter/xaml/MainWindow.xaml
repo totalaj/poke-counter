@@ -294,7 +294,17 @@
             </MenuItem>
             <Separator/>
             <MenuItem StaysOpenOnClick="True" x:Name="AlwaysOnTopOption" Header="Always on top" IsCheckable="true" IsChecked="True" Checked="AlwaysOnTopOption_Checked" Unchecked="AlwaysOnTopOption_Unchecked" Click="AlwaysOnTopOption_Click"></MenuItem>
-            <MenuItem Header="Actions">
+            <MenuItem Header="Options">
+                <MenuItem.Icon>
+                    <Image Source="/icons/settings.png"/>
+                </MenuItem.Icon>
+                <MenuItem Header="Autosave" x:Name="AutosaveOption" StaysOpenOnClick="True" IsCheckable="true" IsChecked="True" Checked="AutosaveOption_Checked" Unchecked="AutosaveOption_Unchecked">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/lightning.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
+                <MenuItem Header="Actions">
                 <MenuItem.Icon>
                     <Image Source="/icons/lightning.png"/>
                 </MenuItem.Icon>

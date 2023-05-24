@@ -28,7 +28,7 @@ namespace PokeCounter
         public GlobalHotkey incrementHotkey = new GlobalHotkey(Keys.Add, 0);
         public GlobalHotkey decrementHotkey = new GlobalHotkey(Keys.Subtract, 0);
         public bool topmost = true;
-
+        public bool autosave = true;
         public void Verify()
         {
             recentProfiles.RemoveWhere(s => !File.Exists(s));
@@ -98,6 +98,7 @@ namespace PokeCounter
 
             metaSettings.data.Verify();
             metaSettings.Save();
+            AutosaveOption.IsChecked = metaSettings.data.autosave;
 
             CounterContextMenu.CommandBindings.AddRange(CounterWindow.CommandBindings);
 
@@ -134,6 +135,17 @@ namespace PokeCounter
                     }
 
                     UpdateCanResize();
+                },
+                Dispatcher);
+
+            new DispatcherTimer(
+                TimeSpan.FromMilliseconds(1000 * 60 * 5), DispatcherPriority.Background,
+                delegate
+                {
+                    if (metaSettings.data.autosave)
+                    {
+                        Commands.CustomCommands.Save.Execute(null, this);
+                    }
                 },
                 Dispatcher);
 
@@ -200,14 +212,22 @@ namespace PokeCounter
             metaSettings.Save();
             if (currentProfile.GetIsDirty())
             {
-                var result = System.Windows.MessageBox.Show("You have unsaved changes!\nWould you like to save?", "Wait!", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
+                MessageBoxResult result = MessageBoxResult.Yes;
+
+                if (!metaSettings.data.autosave)
+                {
+                    result = System.Windows.MessageBox.Show("You have unsaved changes!\nWould you like to save?", "Wait!", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
+                }
 
                 if (result == MessageBoxResult.Yes)
                 {
                     bool saveSucceeded = false;
                     if (currentProfile.path == null)
                     {
-                        saveSucceeded = currentProfile.SaveAs();
+                        if (!metaSettings.data.autosave)
+                            saveSucceeded = currentProfile.SaveAs();
+                        else // Basically ignore save as if autosave is on
+                            saveSucceeded = true;
                     }
                     else
                     {
@@ -783,21 +803,26 @@ namespace PokeCounter
         // Save
         private void SaveCommand_CanExecute(object sender, CanExecuteRoutedEventArgs e)
         {
-            e.CanExecute = SaveOption.IsEnabled = (currentProfile as IDirtyable).GetIsDirty();
+            e.CanExecute = true;
         }
 
         private void SaveCommand_Executed(object sender, ExecutedRoutedEventArgs e)
         {
             if (currentProfile.path == null)
             {
-                currentProfile.SaveAs();
+                if (!metaSettings.data.autosave)
+                {
+                    if (currentProfile.SaveAs())
+                    {
+                        Dispatcher.BeginInvoke(ShowSavedText);
+                    }
+
+                }
             }
             else
             {
-                if (currentProfile.Save())
-                {
-                    Dispatcher.BeginInvoke(ShowSavedText);
-                }
+                currentProfile.Save();
+                Dispatcher.BeginInvoke(ShowSavedText);
             }
         }
 
@@ -1582,6 +1607,27 @@ namespace PokeCounter
                 SetDirty();
                 RefreshAll();
             }
+        }
+
+        #endregion
+
+        #region Options
+        private void AutosaveOption_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!IsInitialized) return;
+            SetAutosave(true);
+        }
+
+        private void AutosaveOption_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (!IsInitialized) return;
+            SetAutosave(false);
+        }
+
+        void SetAutosave(bool autosave)
+        {
+            metaSettings.data.autosave = autosave;
+            metaSettings.Save();
         }
 
         #endregion
