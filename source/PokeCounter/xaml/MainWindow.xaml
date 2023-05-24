@@ -6,7 +6,7 @@
         xmlns:cmd="clr-namespace:PokeCounter.Commands"
         xmlns:colorpicker="clr-namespace:ColorPicker;assembly=ColorPicker"
         mc:Ignorable="d"
-        Title="PokeCounter Window" Height="240" Width="180" ResizeMode="CanResize" WindowStyle="None" Topmost="True" KeyDown="CounterWindow_KeyDown" SizeChanged="CounterWindow_SizeChanged" Drop="CounterWindow_Drop" AllowDrop="True" KeyUp="CounterWindow_KeyUp" ContextMenuOpening="CounterWindow_ContextMenuOpening" Closing="CounterWindow_Closing" DragLeave="CounterWindow_DragLeave" DragEnter="CounterWindow_DragEnter" LocationChanged="CounterWindow_LocationChanged" MouseEnter="CounterWindow_MouseEnter" MouseDown="CounterWindow_MouseDown">
+        Title="PokeCounter Window" Height="240" Width="180" ResizeMode="NoResize" WindowStyle="None" Topmost="True" KeyDown="CounterWindow_KeyDown" SizeChanged="CounterWindow_SizeChanged" Drop="CounterWindow_Drop" AllowDrop="True" KeyUp="CounterWindow_KeyUp" ContextMenuOpening="CounterWindow_ContextMenuOpening" Closing="CounterWindow_Closing" DragLeave="CounterWindow_DragLeave" DragEnter="CounterWindow_DragEnter" LocationChanged="CounterWindow_LocationChanged" MouseEnter="CounterWindow_MouseEnter" MouseDown="CounterWindow_MouseDown">
     <Window.CommandBindings>
         <CommandBinding Command="cmd:CustomCommands.Save" CanExecute="SaveCommand_CanExecute" Executed="SaveCommand_Executed"/>
         <CommandBinding Command="cmd:CustomCommands.SaveAs" CanExecute="SaveAsCommand_CanExecute" Executed="SaveAsCommand_Executed"/>

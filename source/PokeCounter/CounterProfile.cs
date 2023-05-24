@@ -35,6 +35,7 @@ namespace PokeCounter
         public int targetOdds = 4096, targetOddsShinyRolls = 1;
         public string backgroundImagePath = System.IO.Path.Combine(Paths.ExecutableDirectory, "images", "0251Celebi.png");
         public double windowWidth = MainWindow.DefaultWidth, windowHeight = MainWindow.DefaultHeight;
+        public double windowTop = double.NaN, windowLeft = double.NaN;
         public double imageWidth = double.NaN, imageHeight = double.NaN;
         public bool sizeLocked = true;
         public Stretch stretch = Stretch.Uniform;

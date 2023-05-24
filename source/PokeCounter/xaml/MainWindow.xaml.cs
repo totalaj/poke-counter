@@ -80,6 +80,8 @@ namespace PokeCounter
         readonly SettingsFile<MetaSettings> metaSettings = new SettingsFile<MetaSettings>("metaSettings.json", SourceFolderType.Documents);
         readonly UndoList<CounterProfile> undoList = new UndoList<CounterProfile>();
 
+        bool MouseIsDown => GetAsyncKeyState(VK_LBUTTON) < 0;
+
         #endregion
 
         #region Main Window
@@ -121,17 +123,14 @@ namespace PokeCounter
                 TimeSpan.FromMilliseconds(10), DispatcherPriority.Background,
                 delegate
                 {
-                    bool mouseIsDown = GetAsyncKeyState(VK_LBUTTON) < 0;
-
-                    if (resizeDirtyFlag && !mouseIsDown)
+                    if (resizeDirtyFlag && !MouseIsDown)
                     {
                         ResizingText.Visibility = Visibility.Collapsed;
                         resizeDirtyFlag = false;
                         currentProfile.windowWidth = Width;
                         currentProfile.windowHeight = Height;
 
-                        SetDirty();
-                        undoList.PushChange(currentProfile);
+                        PushChange();
                     }
 
                     UpdateCanResize();
@@ -300,8 +299,7 @@ namespace PokeCounter
 
         private void CounterWindow_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            bool mouseIsDown = GetAsyncKeyState(VK_LBUTTON) < 0;
-            if (!mouseIsDown) return;
+            if (!MouseIsDown) return;
             resizeDirtyFlag = true;
             ResizingText.Visibility = Visibility.Visible;
             UpdateResizeText();
@@ -316,10 +314,9 @@ namespace PokeCounter
         {
             const double ExtraCheckSize = 10;
             var screenRect = new Rect(Left - ExtraCheckSize, Top - ExtraCheckSize, Width + ExtraCheckSize * 2, Height + ExtraCheckSize * 2);
-            bool mouseIsDown = GetAsyncKeyState(VK_LBUTTON) < 0;
             bool insideBounds = screenRect.Contains(System.Windows.Forms.Cursor.Position.X, System.Windows.Forms.Cursor.Position.Y);
-            bool handlingThisWindow = (mouseIsDown && IsActive);
-            if (!currentProfile.sizeLocked && ((insideBounds && !mouseIsDown) || handlingThisWindow))
+            bool handlingThisWindow = (MouseIsDown && IsActive);
+            if (!currentProfile.sizeLocked && ((insideBounds && !MouseIsDown) || handlingThisWindow))
             {
                 if (CounterWindow.ResizeMode != ResizeMode.CanResizeWithGrip)
                     CounterWindow.ResizeMode = ResizeMode.CanResizeWithGrip;
@@ -609,6 +606,14 @@ namespace PokeCounter
 
         private void CounterWindow_LocationChanged(object sender, EventArgs e)
         {
+            currentProfile.windowTop = Top;
+            currentProfile.windowLeft = Left;
+
+            if (MouseIsDown)
+            {
+                currentProfile.SetIsDirty(true);
+            }
+
             LayoutData thisLayout = GetLayout();
             EdgeHighlight thisHighlight = 0;
             bestSnapInstruction.targetEdge = 0;
@@ -684,6 +689,13 @@ namespace PokeCounter
             OddsTextMotivation.Visibility = profile.showOdds ? Visibility.Visible : Visibility.Collapsed;
             OddsTextMotivationBox.Visibility = profile.showOdds ? Visibility.Visible : Visibility.Collapsed;
             Background = new SolidColorBrush(profile.backgroundColor);
+
+            if (!currentProfile.windowTop.Equals(double.NaN) && !currentProfile.windowLeft.Equals(double.NaN))
+            {
+                Top = currentProfile.windowTop;
+                Left = currentProfile.windowLeft;
+            }
+
             SetSizeLocked(profile.sizeLocked, true);
             SetShowOdds(profile.showOdds, true);
             SetFiltering(profile.bitmapScalingMode);
@@ -719,6 +731,12 @@ namespace PokeCounter
         void SetDirty()
         {
             currentProfile.SetIsDirty(true);
+        }
+
+        void PushChange()
+        {
+            undoList.PushChange(currentProfile);
+            SetDirty();
         }
 
         void OpenFile(string path)
@@ -1084,11 +1102,10 @@ namespace PokeCounter
         private void ResetCounter()
         {
             // Done twice because we don't record regular increments
-            undoList.PushChange(currentProfile);
+            PushChange();
             currentProfile.count = 0;
             RefreshCounterText();
-            SetDirty();
-            undoList.PushChange(currentProfile);
+            PushChange();
         }
 
         private void IncrementCounter(int delta)
@@ -1137,8 +1154,7 @@ namespace PokeCounter
 
                 currentProfile.windowWidth = setSizePopup.value1;
                 currentProfile.windowHeight = setSizePopup.value2;
-                SetDirty();
-                undoList.PushChange(currentProfile);
+                PushChange();
             }
         }
 
@@ -1148,8 +1164,7 @@ namespace PokeCounter
             Height = DefaultHeight;
             currentProfile.windowWidth = Width;
             currentProfile.windowHeight = Height;
-            SetDirty();
-            undoList.PushChange(currentProfile);
+            PushChange();
         }
 
         private void LockSizeOption_Checked(object sender, RoutedEventArgs e)
@@ -1167,7 +1182,8 @@ namespace PokeCounter
         private void LockSizeOption_Click(object sender, RoutedEventArgs e)
         {
             // This runs after checked and unchecked, which is why it can work
-            undoList.PushChange(currentProfile);
+
+            PushChange();
         }
 
         #endregion
@@ -1192,8 +1208,7 @@ namespace PokeCounter
             if (!File.Exists(openFileDialog.FileName)) return;
 
             LoadImageFromFile(openFileDialog.FileName);
-            SetDirty();
-            undoList.PushChange(currentProfile);
+            PushChange();
         }
 
         private void LoadImageFromFile(string path)
@@ -1234,9 +1249,8 @@ namespace PokeCounter
                 currentProfile.cachedPokemonOptions = popup.cachedOptions;
                 currentProfile.cachedPokemonIndex = popup.cachedPokemon;
                 LoadImageFromFile(popup.imagePath);
-                SetDirty();
                 RefreshAll();
-                undoList.PushChange(currentProfile);
+                PushChange();
             }
         }
 
@@ -1269,8 +1283,7 @@ namespace PokeCounter
         {
             currentProfile.stretch = aStretch;
             BackgroundImage.Stretch = aStretch;
-            SetDirty();
-            undoList.PushChange(currentProfile);
+            PushChange();
             RefreshContextMenuTickboxes();
         }
 
@@ -1313,8 +1326,7 @@ namespace PokeCounter
         {
             BackgroundImage.VerticalAlignment = verticalAlignment;
             currentProfile.verticalAlignment = verticalAlignment;
-            SetDirty();
-            undoList.PushChange(currentProfile);
+            PushChange();
             RefreshContextMenuTickboxes();
         }
 
@@ -1338,8 +1350,7 @@ namespace PokeCounter
         {
             BackgroundImage.HorizontalAlignment = horizontalAlignment;
             currentProfile.horizontalAlignment = horizontalAlignment;
-            SetDirty();
-            undoList.PushChange(currentProfile);
+            PushChange();
             RefreshContextMenuTickboxes();
         }
 
@@ -1347,19 +1358,19 @@ namespace PokeCounter
         private void SetImageFilteringNearestNeighbor_Click(object sender, RoutedEventArgs e)
         {
             SetFiltering(BitmapScalingMode.NearestNeighbor);
-            undoList.PushChange(currentProfile);
+            PushChange();
         }
 
         private void SetImageFilteringLinear_Click(object sender, RoutedEventArgs e)
         {
             SetFiltering(BitmapScalingMode.Linear);
-            undoList.PushChange(currentProfile);
+            PushChange();
         }
 
         private void SetImageFilteringHighQuality_Click(object sender, RoutedEventArgs e)
         {
             SetFiltering(BitmapScalingMode.HighQuality);
-            undoList.PushChange(currentProfile);
+            PushChange();
         }
 
         public void SetFiltering(BitmapScalingMode bitmapScaling)
@@ -1376,8 +1387,7 @@ namespace PokeCounter
         private void SetCounterValue(int value)
         {
             currentProfile.count = value;
-            SetDirty();
-            undoList.PushChange(currentProfile);
+            PushChange();
             RefreshAll();
         }
 
@@ -1432,8 +1442,7 @@ namespace PokeCounter
                 if (changed)
                 {
                     currentProfile.textColor = value;
-                    SetDirty();
-                    undoList.PushChange(currentProfile);
+                    PushChange();
                 }
             };
 
@@ -1458,8 +1467,7 @@ namespace PokeCounter
                 if (changed)
                 {
                     currentProfile.backgroundColor = value;
-                    SetDirty();
-                    undoList.PushChange(currentProfile);
+                    PushChange();
                 }
             };
 
@@ -1486,8 +1494,7 @@ namespace PokeCounter
                 if (changed)
                 {
                     currentProfile.statTextColor = value;
-                    SetDirty();
-                    undoList.PushChange(currentProfile);
+                    PushChange();
                 }
             };
 
@@ -1528,7 +1535,7 @@ namespace PokeCounter
 
         private void ShowOddsOption_Click(object sender, RoutedEventArgs e)
         {
-            undoList.PushChange(currentProfile);
+            PushChange();
         }
 
         private void SetTargetOddsDirectOption_Click(object sender, RoutedEventArgs e)
@@ -1540,8 +1547,7 @@ namespace PokeCounter
                 {
                     currentProfile.targetOdds = odds;
                     currentProfile.targetOddsShinyRolls = 1;
-                    SetDirty();
-                    undoList.PushChange(currentProfile);
+                    PushChange();
                     RefreshAll();
                 }
             }
@@ -1559,8 +1565,7 @@ namespace PokeCounter
             {
                 currentProfile.targetOddsShinyRolls = setRatio.value1;
                 currentProfile.targetOdds = setRatio.value2;
-                SetDirty();
-                undoList.PushChange(currentProfile);
+                PushChange();
                 RefreshAll();
             }
         }
@@ -1598,7 +1603,7 @@ namespace PokeCounter
 
         private void AlwaysOnTopOption_Click(object sender, RoutedEventArgs e)
         {
-            undoList.PushChange(currentProfile);
+            PushChange();
         }
 
         void SetAlwaysOnTopOption(bool alwaysOnTop, bool updateCheckmark = false)
