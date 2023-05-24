@@ -86,7 +86,7 @@ namespace PokeCounter
 
         #region Main Window
 
-        public MainWindow(string startupFile = null)
+        public MainWindow(string startupFile = null, bool markAsNew = false)
         {
             InitializeComponent();
 
@@ -114,8 +114,6 @@ namespace PokeCounter
             if (currentProfile == null)
             {
                 InitializeFromProfile(CounterProfile.CreateDefault(), true);
-                metaSettings.data.lastProfilePath = currentProfile.path;
-                metaSettings.Save();
             }
 
             undoList.PushChange(currentProfile);
@@ -149,10 +147,16 @@ namespace PokeCounter
                 },
                 Dispatcher);
 
-            Dispatcher.BeginInvoke(StartEscapeTracker);
+            Dispatcher.Invoke(EscapeTracker);
             RefreshAll();
             SetAlwaysOnTopOption(metaSettings.data.topmost, true);
             SetEdgeHighlights(0);
+
+            if (markAsNew)
+            {
+                currentProfile.path = null;
+                currentProfile.SetIsDirty(true);
+            }
         }
 
         private void CounterWindow_MouseDown(object sender, MouseButtonEventArgs e)
@@ -200,16 +204,15 @@ namespace PokeCounter
             }
         }
 
-        private void CloseOption_Click(object sender, RoutedEventArgs e)
-        {
-            Close();
-        }
-
         private void CounterWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            metaSettings.data.lastProfilePath = currentProfile.path;
-            metaSettings.data.recentProfiles.Add(currentProfile.path);
-            metaSettings.Save();
+            if (currentProfile.path != null)
+            {
+                metaSettings.data.lastProfilePath = currentProfile.path;
+                metaSettings.data.recentProfiles.Add(currentProfile.path);
+                metaSettings.Save();
+            }
+
             if (currentProfile.GetIsDirty())
             {
                 MessageBoxResult result = MessageBoxResult.Yes;
@@ -458,7 +461,6 @@ namespace PokeCounter
 
             return IntPtr.Zero;
         }
-
 
         #endregion
 
@@ -814,7 +816,7 @@ namespace PokeCounter
                 {
                     if (currentProfile.SaveAs())
                     {
-                        Dispatcher.BeginInvoke(ShowSavedText);
+                        Dispatcher.Invoke(ShowSavedText);
                     }
 
                 }
@@ -822,7 +824,7 @@ namespace PokeCounter
             else
             {
                 currentProfile.Save();
-                Dispatcher.BeginInvoke(ShowSavedText);
+                Dispatcher.Invoke(ShowSavedText);
             }
         }
 
@@ -892,6 +894,53 @@ namespace PokeCounter
             {
                 InitializeFromProfile(redoProfile);
             }
+        }
+
+        // Close
+        private void CloseCommand_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = true;
+        }
+
+        private void CloseCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            Close();
+        }
+
+        // Select pokemon
+        private void SelectPokemonCommand_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = DownloadManager.IsOnline();
+        }
+
+        private void SelectPokemonCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            SelectPokemonPopup popup = new SelectPokemonPopup("pokemon", metaSettings.data.pokemonDatas.pokemon, currentProfile.bitmapScalingMode);
+
+            popup.cachedGame = currentProfile.cachedPokemonGame;
+            popup.cachedOptions = currentProfile.cachedPokemonOptions;
+            popup.cachedPokemon = currentProfile.cachedPokemonIndex;
+
+            if (popup.ShowDialog().GetValueOrDefault(false))
+            {
+                currentProfile.cachedPokemonGame = popup.cachedGame;
+                currentProfile.cachedPokemonOptions = popup.cachedOptions;
+                currentProfile.cachedPokemonIndex = popup.cachedPokemon;
+                LoadImageFromFile(popup.imagePath);
+                RefreshAll();
+                PushChange();
+            }
+        }
+
+        // Duplicate
+        private void DuplicateCommand_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = true;
+        }
+
+        private void DuplicateCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            Process.Start(Paths.Executable, "\"" + currentProfile.path + "\" -n");
         }
 
         #endregion
@@ -992,7 +1041,7 @@ namespace PokeCounter
         #region Helper Functions
 
         bool escapeHeld;
-        public async void StartEscapeTracker()
+        public async void EscapeTracker()
         {
             const int delay = 10;
             float escapeTimer = 0;
@@ -1258,25 +1307,6 @@ namespace PokeCounter
             }
 
             currentProfile.backgroundImagePath = path;
-        }
-
-        private void SetImageFromPokemonOption_Click(object sender, RoutedEventArgs e)
-        {
-            SelectPokemonPopup popup = new SelectPokemonPopup("pokemon", metaSettings.data.pokemonDatas.pokemon, currentProfile.bitmapScalingMode);
-
-            popup.cachedGame = currentProfile.cachedPokemonGame;
-            popup.cachedOptions = currentProfile.cachedPokemonOptions;
-            popup.cachedPokemon = currentProfile.cachedPokemonIndex;
-
-            if (popup.ShowDialog().GetValueOrDefault(false))
-            {
-                currentProfile.cachedPokemonGame = popup.cachedGame;
-                currentProfile.cachedPokemonOptions = popup.cachedOptions;
-                currentProfile.cachedPokemonIndex = popup.cachedPokemon;
-                LoadImageFromFile(popup.imagePath);
-                RefreshAll();
-                PushChange();
-            }
         }
 
         // Size

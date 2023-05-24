@@ -13,8 +13,9 @@ namespace PokeCounter
 {
     public static class Paths
     {
-        public static string Executable => System.Reflection.Assembly.GetEntryAssembly().Location;
-        public static string ExecutableDirectory => Ensure(Path.GetDirectoryName(Executable));
+        public static string EntryAssembly => System.Reflection.Assembly.GetEntryAssembly().Location;
+        public static string Executable => EntryAssembly.Replace(".dll", ".exe");
+        public static string ExecutableDirectory => Ensure(Path.GetDirectoryName(EntryAssembly));
 
         public static string RelativeTempDirectory => "PokeCounter\\";
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Windows;
 
 namespace PokeCounter
@@ -9,9 +10,20 @@ namespace PokeCounter
         private void Application_Startup(object sender, StartupEventArgs e)
         {
             string startupFile = null;
-            if (e.Args.Length == 1)
-                startupFile = e.Args[0];
-            MainWindow wnd = new MainWindow(startupFile);
+            bool markAsNew = false;
+
+            foreach (var arg in e.Args)
+            {
+                if (File.Exists(arg))
+                {
+                    startupFile = arg;
+                }
+                if (arg.StartsWith("-n"))
+                {
+                    markAsNew = true;
+                }
+            }
+            MainWindow wnd = new MainWindow(startupFile, markAsNew);
 
             wnd.Show();
         }

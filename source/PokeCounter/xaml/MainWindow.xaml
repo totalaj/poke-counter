@@ -14,6 +14,9 @@
         <CommandBinding Command="cmd:CustomCommands.New"  CanExecute="NewProfileCommand_CanExecute" Executed="NewProfileCommand_Executed"/>
         <CommandBinding Command="cmd:CustomCommands.Undo" CanExecute="UndoCommand_CanExecute" Executed="UndoCommand_Executed"/>
         <CommandBinding Command="cmd:CustomCommands.Redo" CanExecute="RedoCommand_CanExecute" Executed="RedoCommand_Executed"/>
+        <CommandBinding Command="cmd:CustomCommands.Close" CanExecute="CloseCommand_CanExecute" Executed="CloseCommand_Executed"/>
+        <CommandBinding Command="cmd:CustomCommands.SelectPokemon" CanExecute="SelectPokemonCommand_CanExecute" Executed="SelectPokemonCommand_Executed"/>
+        <CommandBinding Command="cmd:CustomCommands.Duplicate" CanExecute="DuplicateCommand_CanExecute" Executed="DuplicateCommand_Executed"/>
     </Window.CommandBindings>
     <Grid>
         <Grid Panel.ZIndex="2">
@@ -139,7 +142,7 @@
                             <Image Source="/icons/paper-clip.png"/>
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem x:Name="SelectPokemonOption" Header="Select pokemon" Click="SetImageFromPokemonOption_Click">
+                    <MenuItem x:Name="SelectPokemonOption" Command="cmd:CustomCommands.SelectPokemon">
                         <MenuItem.Icon>
                             <Image Source="/icons/pokeball-icon.png"/>
                         </MenuItem.Icon>
@@ -291,6 +294,11 @@
                         <Image Source="/icons/fullscreen.png"/>
                     </MenuItem.Icon>
                 </MenuItem>
+                <MenuItem Command="cmd:CustomCommands.Duplicate">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/copy.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
             </MenuItem>
             <Separator/>
             <MenuItem StaysOpenOnClick="True" x:Name="AlwaysOnTopOption" Header="Always on top" IsCheckable="true" IsChecked="True" Checked="AlwaysOnTopOption_Checked" Unchecked="AlwaysOnTopOption_Unchecked" Click="AlwaysOnTopOption_Click"></MenuItem>
@@ -334,7 +342,7 @@
                     </MenuItem.Icon>
                 </MenuItem>
             </MenuItem>
-            <MenuItem Header="Exit" Click="CloseOption_Click">
+            <MenuItem Header="Exit" Command="cmd:CustomCommands.Close">
                 <MenuItem.Icon>
                     <Image Source="/icons/close.png"/>
                 </MenuItem.Icon>

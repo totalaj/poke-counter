@@ -72,5 +72,40 @@ namespace PokeCounter.Commands
             new KeyGesture(Key.N, ModifierKeys.Control)
         }
     );
+
+        public static readonly RoutedUICommand Close = new RoutedUICommand
+    (
+        "Close",
+        "Close",
+        typeof(CustomCommands),
+        new InputGestureCollection()
+        {
+            new KeyGesture(Key.W, ModifierKeys.Control)
+        }
+    );
+
+        public static readonly RoutedUICommand SelectPokemon = new RoutedUICommand
+    (
+        "Select pokemon",
+        "Select pokemon",
+        typeof(CustomCommands),
+        new InputGestureCollection()
+        {
+            new KeyGesture(Key.P, ModifierKeys.Control)
+        }
+    );
+
+
+        public static readonly RoutedUICommand Duplicate = new RoutedUICommand
+    (
+        "Duplicate window",
+        "Duplicate window",
+        typeof(CustomCommands),
+        new InputGestureCollection()
+        {
+            new KeyGesture(Key.D, ModifierKeys.Control)
+        }
+    );
+
     }
 }
