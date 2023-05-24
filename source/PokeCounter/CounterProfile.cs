@@ -44,7 +44,7 @@ namespace PokeCounter
         public Color statTextColor = Color.FromRgb(0, 0, 0);
         public Color backgroundColor = Color.FromRgb(255, 255, 255);
         public bool showOdds = true;
-        public BitmapScalingMode bitmapScalingMode = BitmapScalingMode.NearestNeighbor;
+        public BitmapScalingMode bitmapScalingMode = BitmapScalingMode.HighQuality;
         public int cachedPokemonIndex = 0;
         public Options cachedPokemonOptions = 0;
         public CategoryWrapper cachedPokemonGame = new CategoryWrapper()
