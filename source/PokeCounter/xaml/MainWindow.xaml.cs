@@ -86,25 +86,10 @@ namespace PokeCounter
 
         public MainWindow(string startupFile = null)
         {
-            // @todo
-            // Grouping windows together so they move at once together
-            // Exporting and opening a group file
-            // Set filter to smooth
-            // Better keybinds, and keybind normal buttons too
-            // More text customization
-            // Cache window location
-            // Autosave (different save, is applied on ctrl+s)
-            // Could have save recovery in cache?
-            // Better error handling aswell please
-            // Add your own shaders???
-            // Sound for increment/decrement
-            // Set dirty on new file loaded from startup
-            // Deal with closing multiple programs simultaneously
-            // Ctrl+w to close
-            // Ctrl+p to open pokemon menu
-            // Ctrl+d to duplicate current profile
-
             InitializeComponent();
+
+            MinHeight = MinimumHeight;
+            MinWidth = MinimumWidth;
 
             RefreshPokemonDatas();
             EnsureFileAssociation();
@@ -133,7 +118,7 @@ namespace PokeCounter
             undoList.PushChange(currentProfile);
 
             new DispatcherTimer(
-                TimeSpan.FromMilliseconds(100), DispatcherPriority.Background,
+                TimeSpan.FromMilliseconds(10), DispatcherPriority.Background,
                 delegate
                 {
                     bool mouseIsDown = GetAsyncKeyState(VK_LBUTTON) < 0;
@@ -148,6 +133,8 @@ namespace PokeCounter
                         SetDirty();
                         undoList.PushChange(currentProfile);
                     }
+
+                    UpdateCanResize();
                 },
                 Dispatcher);
 
@@ -318,6 +305,30 @@ namespace PokeCounter
             resizeDirtyFlag = true;
             ResizingText.Visibility = Visibility.Visible;
             UpdateResizeText();
+        }
+
+        private void CounterWindow_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            UpdateCanResize();
+        }
+
+        void UpdateCanResize()
+        {
+            const double ExtraCheckSize = 10;
+            var screenRect = new Rect(Left - ExtraCheckSize, Top - ExtraCheckSize, Width + ExtraCheckSize * 2, Height + ExtraCheckSize * 2);
+            bool mouseIsDown = GetAsyncKeyState(VK_LBUTTON) < 0;
+            bool insideBounds = screenRect.Contains(System.Windows.Forms.Cursor.Position.X, System.Windows.Forms.Cursor.Position.Y);
+            bool handlingThisWindow = (mouseIsDown && IsActive);
+            if (!currentProfile.sizeLocked && ((insideBounds && !mouseIsDown) || handlingThisWindow))
+            {
+                if (CounterWindow.ResizeMode != ResizeMode.CanResizeWithGrip)
+                    CounterWindow.ResizeMode = ResizeMode.CanResizeWithGrip;
+            }
+            else
+            {
+                if (CounterWindow.ResizeMode != ResizeMode.NoResize)
+                    CounterWindow.ResizeMode = ResizeMode.NoResize;
+            }
         }
 
         #endregion
@@ -1095,17 +1106,6 @@ namespace PokeCounter
         {
             currentProfile.sizeLocked = aLockedSize;
 
-            if (aLockedSize)
-            {
-                CounterWindow.ResizeMode = ResizeMode.NoResize;
-            }
-            else
-            {
-                CounterWindow.ResizeMode = ResizeMode.CanResize;
-                MinHeight = MinimumHeight;
-                MinWidth = MinimumWidth;
-            }
-
             if (updateCheckmark)
             {
                 LockSizeOption.IsChecked = aLockedSize;
@@ -1646,6 +1646,7 @@ namespace PokeCounter
         {
             FileAssociations.EnsureAssociationsSet(System.IO.Path.Combine(Paths.ExecutableDirectory, "icons", "pc file.ico"));
         }
+
 
         // Refresh data
         private void GetNewPokemonData_Click(object sender, RoutedEventArgs e)
