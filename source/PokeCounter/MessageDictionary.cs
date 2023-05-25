@@ -17,8 +17,11 @@ namespace PokeCounter
         /// wParam = handle of disconnecting window
         /// </summary>
         Disconnect,
+        RefreshOtherWindows,
         ReserveQueryHandle,
         DisposeQueryHandle,
+        Show,
+        Hide,
         Increment,
         Decrement,
         SetValue,
@@ -27,6 +30,25 @@ namespace PokeCounter
         /// wParam = EdgeHighlight enum
         /// </summary>
         SetEdgeHighlight,
+        WriteProfilePathToGroupFile,
+        /// <summary>
+        /// wParam = Group index. -1 clears it from groups
+        /// </summary>
+        SetGroup,
+        /// <summary>
+        /// ReturnValue = Group index
+        /// </summary>
+        GetGroup,
+        EnterGroupElegibilityMode,
+        ExitGroupElegibilityMode,
+        /// <summary>
+        /// wParam = eligibility bool. 0 is false, 1 is true
+        /// </summary>
+        SetEligibleForGroup,
+        /// <summary>
+        /// ReturnValue = eligibility bool. 0 is false, 1 is true
+        /// </summary>
+        GetEligibleForGroup,
     }
     /// <summary>
     /// Sends a struct immediately, is read by the reciever, and is disposed
@@ -36,7 +58,12 @@ namespace PokeCounter
         /// <summary>
         /// Expects struct LayoutData
         /// </summary>
-        LayoutData = 0x400 + 100,
+        LayoutData = 0x400 + 1000,
+        /// <summary>
+        /// Expects a Vector struct
+        /// wParam = Optional group identifier. If this is -1, movement will be made no matter group index or group mode
+        /// </summary>
+        DeltaMovement,
     }
 
     /// <summary>
@@ -44,6 +71,6 @@ namespace PokeCounter
     /// </summary>
     public enum Query
     {
-        LayoutData = 0x400 + 200,
+        LayoutData = 0x400 + 2000,
     }
 }

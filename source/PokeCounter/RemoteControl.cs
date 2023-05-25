@@ -12,12 +12,12 @@ using System.Windows.Threading;
 
 namespace PokeCounter
 {
-    struct WindowWrapper
+    public struct WindowWrapper
     {
         public IntPtr windowHandle;
     }
 
-    struct QueryHandle
+    public struct QueryHandle
     {
         private bool isValid;
         public bool IsValid()
@@ -42,7 +42,7 @@ namespace PokeCounter
         public string FileName => guid + ".file";
     }
 
-    class RemoteControlManager
+    public class RemoteControlManager
     {
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         private static extern IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
@@ -91,7 +91,10 @@ namespace PokeCounter
             public Sender sender;
             public DateTime time;
         }
-
+        public RemoteControlManager()
+        {
+            GatherWindows();
+        }
         public RemoteControlManager(Window owningWindow)
         {
             this.owningWindow = owningWindow;
@@ -130,6 +133,16 @@ namespace PokeCounter
         }
 
         public List<WindowWrapper> otherWindows = new List<WindowWrapper>();
+        public List<WindowWrapper> AllWindows
+        {
+            get
+            {
+                List<WindowWrapper> allWindows = new List<WindowWrapper>();
+                allWindows.Add(thisWindow);
+                allWindows.AddRange(otherWindows);
+                return allWindows;
+            }
+        }
         private Dictionary<Guid, SenderCache> cachedSenders = new Dictionary<Guid, SenderCache>();
 
         Window owningWindow;
@@ -141,7 +154,7 @@ namespace PokeCounter
             otherWindows.Clear();
             foreach (var process in Process.GetProcesses())
             {
-                if (process.MainWindowTitle.Contains(owningWindow.Title) && process.MainWindowHandle != thisWindow.windowHandle)
+                if (process.MainWindowTitle.Contains(MainWindow.WindowTitle) && process.MainWindowHandle != thisWindow.windowHandle)
                 {
                     AddWindow(process.MainWindowHandle);
                 }
@@ -185,14 +198,27 @@ namespace PokeCounter
         public IntPtr SendMessage(IntPtr window, Message message, int wParam = 0, int lParam = 0)
             => SendMessage(window, (int)message, new IntPtr(wParam), new IntPtr(lParam));
 
-        public List<IntPtr> BroadcastMessage(Message message, int wParam = 0, int lParam = 0)
+        public List<IntPtr> BroadcastMessage(Message message, int wParam = 0, int lParam = 0, bool all = false)
         {
             List<IntPtr> results = new List<IntPtr>();
-            foreach (var window in otherWindows)
+            foreach (var window in (all ? AllWindows : otherWindows))
             {
                 results.Add(SendMessage(window, message, wParam, lParam));
             }
             return results;
+        }
+
+        /// <summary>
+        /// Sends a post as a raw message. This is useful if you want to manage the posting and disposing of the data struct yourself
+        /// </summary>
+        public IntPtr PostDirect(WindowWrapper window, Post postType)
+        {
+            return PostDirect(window, postType, 0, 0);
+        }
+
+        public IntPtr PostDirect(WindowWrapper window, Post postType, int wParam = 0, int lParam = 0)
+        {
+            return SendMessage(window, (int)postType, wParam, lParam);
         }
 
         public IntPtr Post<T>(WindowWrapper window, Post messageType, T dataStruct) where T : struct
@@ -204,6 +230,26 @@ namespace PokeCounter
                 sender.PostData(dataStruct, structSize);
                 return SendMessage(window, (Message)messageType);
             }
+        }
+
+        /// <summary>
+        /// Must be disposed of before another post is made
+        /// This is only useful for managing your own posts, if you want multiple recievers to read a single post
+        /// </summary>
+        public IDisposable PostData<T>(T dataStruct) where T : struct
+        {
+            return PostData(dataStruct, Marshal.SizeOf<T>());
+        }
+
+        /// <summary>
+        /// Must be disposed of before another post is made
+        /// This is only useful for managing your own posts, if you want multiple recievers to read a single post
+        /// </summary>
+        public IDisposable PostData<T>(T dataStruct, int structSize) where T : struct
+        {
+            Sender sender = new Sender();
+            sender.PostData(dataStruct, structSize);
+            return sender;
         }
 
         public bool RecieveData<T>(out T result) where T : struct => RecieveData(Marshal.SizeOf<T>(), out result);

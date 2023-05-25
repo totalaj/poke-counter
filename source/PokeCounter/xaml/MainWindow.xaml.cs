@@ -72,6 +72,8 @@ namespace PokeCounter
         public const double DefaultWidth = 180, DefaultHeight = 240;
         public const double MinimumWidth = 100, MinimumHeight = 100;
 
+        string CommonGroupFile => Path.Combine(Paths.CacheDirectory, "CurrentGroupFile.txt");
+
         // Variables
         KeyboardHook incrementHook = new KeyboardHook();
         KeyboardHook decrementHook = new KeyboardHook();
@@ -80,15 +82,20 @@ namespace PokeCounter
         readonly SettingsFile<MetaSettings> metaSettings = new SettingsFile<MetaSettings>("metaSettings.json", SourceFolderType.Documents);
         readonly UndoList<CounterProfile> undoList = new UndoList<CounterProfile>();
 
+        public static string WindowTitle = "PokeCounter Window";
+
         bool MouseIsDown => GetAsyncKeyState(VK_LBUTTON) < 0;
 
         #endregion
 
         #region Main Window
 
-        public MainWindow(string startupFile = null, bool markAsNew = false)
+        public MainWindow(string[] args)
         {
             InitializeComponent();
+            Title = WindowTitle;
+
+            ParseArguments(args);
 
             MinHeight = MinimumHeight;
             MinWidth = MinimumWidth;
@@ -142,7 +149,7 @@ namespace PokeCounter
                 {
                     if (metaSettings.data.autosave)
                     {
-                        Commands.CustomCommands.Save.Execute(null, this);
+                        Commands.CustomCommands.Save.Execute(true, this);
                     }
                 },
                 Dispatcher);
@@ -157,15 +164,62 @@ namespace PokeCounter
                 currentProfile.path = null;
                 currentProfile.SetIsDirty(true);
             }
+
+            if (startHidden)
+            {
+                Hide();
+            }
+        }
+
+        bool markAsNew = false;
+        bool startHidden = false;
+        string startupFile;
+
+        void ParseArguments(string[] args)
+        {
+            for (int i = 0; i < args.Length; i++)
+            {
+                string arg = args[i];
+                if (File.Exists(arg))
+                {
+                    startupFile = arg;
+                }
+                if (arg.StartsWith("-n"))
+                {
+                    markAsNew = true;
+                }
+                if (arg.StartsWith("-g"))
+                {
+                    if (i + 1 < args.Length)
+                    {
+                        i++;
+                        if (int.TryParse(args[i], out groupIndex))
+                        {
+                            if (groupIndex != -1) groupMode = true;
+                        }
+                    }
+                }
+                if (arg.StartsWith("-h"))
+                {
+                    startHidden = true;
+                }
+            }
         }
 
         private void CounterWindow_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.LeftButton == MouseButtonState.Pressed)
             {
-                UpdateOtherLayouts();
-                DragMove();
-                FinishDragging();
+                if (groupEligibilityMode)
+                {
+                    SetEligibleForGroup(!eligibleForGroup);
+                }
+                else
+                {
+                    UpdateOtherLayouts();
+                    DragMove();
+                    FinishDragging();
+                }
             }
             if (e.MiddleButton == MouseButtonState.Pressed)
             {
@@ -270,6 +324,8 @@ namespace PokeCounter
             CurrentFileFullNameLabel.Header = currentProfile.path + (dirty ? "*" : "");
             CurrentFileNameLabel.Header = System.IO.Path.GetFileName(currentProfile.path) + (dirty ? "*" : "");
 
+            UngroupOption.Visibility = groupMode ? Visibility.Visible : Visibility.Collapsed;
+
             foreach (var profile in metaSettings.data.recentProfiles.Reverse())
             {
                 if (profile == currentProfile.path) continue;
@@ -360,6 +416,10 @@ namespace PokeCounter
         protected override void OnSourceInitialized(EventArgs e)
         {
             base.OnSourceInitialized(e);
+            if (startHidden)
+            {
+                Hide();
+            }
             HwndSource source = PresentationSource.FromVisual(this) as HwndSource;
             source.AddHook(WndProc);
             rcm = new RemoteControlManager(this);
@@ -428,6 +488,66 @@ namespace PokeCounter
                         SetEdgeHighlights((EdgeHighlight)wParam.ToInt32());
                         break;
                     }
+                case Message.WriteProfilePathToGroupFile:
+                    {
+                        handled = true;
+                        List<string> lines = File.ReadAllLines(CommonGroupFile).ToList();
+                        lines.Add(currentProfile.path);
+                        File.WriteAllLines(CommonGroupFile, lines);
+                        break;
+                    }
+                case Message.SetGroup:
+                    {
+                        handled = true;
+                        SetGroup(wParam.ToInt32());
+                        break;
+                    }
+                case Message.GetGroup:
+                    {
+                        handled = true;
+                        return new IntPtr(groupIndex);
+                    }
+                case Message.EnterGroupElegibilityMode:
+                    {
+                        handled = true;
+                        SetGroupEligibilityMode(true);
+                        break;
+                    }
+                case Message.ExitGroupElegibilityMode:
+                    {
+                        handled = true;
+                        SetGroupEligibilityMode(false);
+                        break;
+                    }
+                case Message.SetEligibleForGroup:
+                    {
+                        handled = true;
+                        SetEligibleForGroup(wParam.ToInt32() == 1);
+                        break;
+                    }
+                case Message.GetEligibleForGroup:
+                    {
+                        handled = true;
+                        return new IntPtr(eligibleForGroup ? 1 : 0);
+                    }
+                case Message.Show:
+                    {
+                        handled = true;
+                        Show();
+                        break;
+                    }
+                case Message.Hide:
+                    {
+                        handled = true;
+                        Hide();
+                        break;
+                    }
+                case Message.RefreshOtherWindows:
+                    {
+                        handled = true;
+                        rcm.GatherWindows();
+                        break;
+                    }
                 default:
                     break;
             }
@@ -440,6 +560,18 @@ namespace PokeCounter
                         if (rcm.RecieveData(out LayoutData ld))
                         {
                             SetLayout(ld);
+                        }
+                        break;
+                    }
+                case Post.DeltaMovement:
+                    {
+                        int inGroup = wParam.ToInt32();
+
+                        if (inGroup == -1 || (inGroup == groupIndex && groupMode))
+                        {
+                            rcm.RecieveData(out Vector delta);
+                            Left += delta.X;
+                            Top += delta.Y;
                         }
                         break;
                     }
@@ -562,6 +694,8 @@ namespace PokeCounter
         {
             otherLayouts.Clear();
 
+            if (groupMode) return;
+
             foreach (var window in rcm.otherWindows)
             {
                 otherLayouts.Add(
@@ -626,12 +760,21 @@ namespace PokeCounter
             }
         }
 
+        Vector prevLocation;
         private void CounterWindow_LocationChanged(object sender, EventArgs e)
         {
             currentProfile.windowTop = Top;
             currentProfile.windowLeft = Left;
+            Vector curLocation = new Vector(Left, Top);
+            Vector delta = curLocation - prevLocation;
+            prevLocation = new Vector(Left, Top);
 
-            if (MouseIsDown)
+            if (groupMode && IsActive)
+            {
+                MoveGroup(delta);
+            }
+
+            if (MouseIsDown && IsActive)
             {
                 currentProfile.SetIsDirty(true);
             }
@@ -689,6 +832,46 @@ namespace PokeCounter
             Left = layout.WindowLeft;
             Top = layout.WindowTop;
         }
+
+        #region Group
+
+        bool groupMode = false;
+        bool groupEligibilityMode = false, eligibleForGroup = false;
+        int groupIndex = -1;
+
+        void SetGroup(int groupIndex)
+        {
+            this.groupIndex = groupIndex;
+            groupMode = groupIndex != -1;
+        }
+
+        public void SetGroupEligibilityMode(bool eligible)
+        {
+            groupEligibilityMode = eligible;
+            if (!eligible)
+            {
+                SetEligibleForGroup(false);
+            }
+        }
+
+        public void SetEligibleForGroup(bool eligible)
+        {
+            GroupOverlay.Visibility = eligible ? Visibility.Visible : Visibility.Collapsed;
+            eligibleForGroup = eligible;
+        }
+
+        void MoveGroup(Vector delta)
+        {
+            using (var post = rcm.PostData(delta))
+            {
+                foreach (var window in rcm.otherWindows)
+                {
+                    rcm.PostDirect(window, Post.DeltaMovement, groupIndex);
+                }
+            }
+        }
+
+        #endregion
 
         #endregion
 
@@ -810,9 +993,11 @@ namespace PokeCounter
 
         private void SaveCommand_Executed(object sender, ExecutedRoutedEventArgs e)
         {
+            bool isAutosaveAction = (e.Parameter is bool) ? ((bool)e.Parameter) : false;
+
             if (currentProfile.path == null)
             {
-                if (!metaSettings.data.autosave)
+                if (!(metaSettings.data.autosave && isAutosaveAction))
                 {
                     if (currentProfile.SaveAs())
                     {
@@ -1168,6 +1353,20 @@ namespace PokeCounter
             BackgroundColorOption.IsEnabled = backgroundColorPickerPopup?.IsLoaded != true;
         }
 
+        public static int GetNextAvailableGroupIndex(RemoteControlManager optionalRCM = null)
+        {
+            if (optionalRCM == null) optionalRCM = new RemoteControlManager();
+            int highestCurrentGroup = -1;
+            foreach (var window in optionalRCM.otherWindows)
+            {
+                int group = optionalRCM.SendMessage(window, Message.GetGroup).ToInt32();
+                if (group > highestCurrentGroup)
+                {
+                    highestCurrentGroup = group;
+                }
+            }
+            return highestCurrentGroup + 1;
+        }
 
         #endregion
 
@@ -1207,7 +1406,83 @@ namespace PokeCounter
 
         #region Context Menu
 
-        #region Save
+        #region Groups
+
+        private void UngroupOption_Click(object sender, RoutedEventArgs e)
+        {
+            groupIndex = -1;
+            groupMode = false;
+        }
+
+        CreateGroupPopup createGroupPopup;
+
+        private void SaveGroupFileOption_Clicked(object sender, RoutedEventArgs e)
+        {
+            if (createGroupPopup?.IsLoaded == true) return;
+
+            createGroupPopup = new CreateGroupPopup(groupIndex, this, rcm);
+            createGroupPopup.Show();
+
+            createGroupPopup.onFinished += (success) =>
+            {
+                if (success)
+                {
+                    SaveFileDialog saveFileDialog = new SaveFileDialog();
+                    saveFileDialog.DefaultExt = CounterProfile.GroupFileExtension;
+                    saveFileDialog.AddExtension = true;
+                    saveFileDialog.Title = "Save Counter Group";
+                    if (currentProfile.path != null)
+                        saveFileDialog.InitialDirectory = System.IO.Path.GetDirectoryName(currentProfile.path);
+                    else
+                        saveFileDialog.InitialDirectory = Paths.ExecutableDirectory;
+
+                    var result = saveFileDialog.ShowDialog();
+
+                    if (result != System.Windows.Forms.DialogResult.OK) return;
+
+                    File.WriteAllText(CommonGroupFile, "");
+                    int nextAvailableGroup = GetNextAvailableGroupIndex();
+                    foreach (var window in rcm.AllWindows)
+                    {
+                        if (rcm.SendMessage(window, Message.GetEligibleForGroup).ToInt32() == 1)
+                        {
+                            rcm.SendMessage(window, Message.WriteProfilePathToGroupFile);
+                            rcm.SendMessage(window, Message.SetGroup, nextAvailableGroup);
+                        }
+                    }
+
+                    File.Copy(CommonGroupFile, saveFileDialog.FileName);
+                }
+            };
+        }
+
+        private void MakeGroupOption_Clicked(object sender, RoutedEventArgs e)
+        {
+            if (createGroupPopup?.IsLoaded == true) return;
+
+            createGroupPopup = new CreateGroupPopup(groupIndex, this, rcm);
+            createGroupPopup.Show();
+
+            createGroupPopup.onFinished += (success) =>
+            {
+                if (success)
+                {
+                    int nextAvailableGroup = GetNextAvailableGroupIndex();
+                    foreach (var window in rcm.AllWindows)
+                    {
+                        if (rcm.SendMessage(window, Message.GetEligibleForGroup).ToInt32() == 1)
+                        {
+                            rcm.SendMessage(window, Message.SetGroup, nextAvailableGroup);
+                        }
+                    }
+                }
+            };
+        }
+
+        private void GroupAllOpenWindows_Clicked(object sender, RoutedEventArgs e)
+        {
+            rcm.BroadcastMessage(Message.SetGroup, GetNextAvailableGroupIndex(), all: true);
+        }
 
         #endregion
 
@@ -1717,15 +1992,32 @@ namespace PokeCounter
             }
 
             EnsureFileAssociation();
-            System.Windows.MessageBox.Show(".counter files will now open with this executable", "Success!");
+            System.Windows.MessageBox.Show(".counter and .counterGroup files will now open with this executable", "Success!");
         }
         public static bool IsAdministrator =>
              new WindowsPrincipal(WindowsIdentity.GetCurrent())
                  .IsInRole(WindowsBuiltInRole.Administrator);
 
+
         static void EnsureFileAssociation()
         {
-            FileAssociations.EnsureAssociationsSet(System.IO.Path.Combine(Paths.ExecutableDirectory, "icons", "pc file.ico"));
+            FileAssociations.EnsureAssociationsSet(new FileAssociation
+            {
+                Extension = ".counter",
+                ProgId = "PokeCounter.Counter",
+                FileTypeDescription = "PokeCounter Counter",
+                ExecutableFilePath = Paths.Executable,
+                FileIcon = Path.Combine(Paths.ExecutableDirectory, "icons", "pc file.ico")
+            },
+            new FileAssociation
+            {
+                Extension = ".counterGroup",
+                ProgId = "PokeCounter.Counter",
+                FileTypeDescription = "PokeCounter Counter Group",
+                ExecutableFilePath = Paths.Executable,
+                FileIcon = Path.Combine(Paths.ExecutableDirectory, "icons", "pc file.ico")
+            }
+            );
         }
 
 

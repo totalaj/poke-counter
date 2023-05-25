@@ -32,6 +32,10 @@
         <Grid x:Name="FileDropOverlay" Background="#FF3160FF" Panel.ZIndex="1" Visibility="Collapsed">
             <Image HorizontalAlignment="Center" Height="100" Margin="0,0,0,0" VerticalAlignment="Center" Width="100" Source="/icons/file-plus.png"/>
         </Grid>
+        <Grid x:Name="GroupOverlay" Background="#FF3160FF" Panel.ZIndex="1" Visibility="Collapsed">
+            <Image HorizontalAlignment="Center" Height="100" Margin="0,0,0,0" VerticalAlignment="Center" Width="100" Source="/icons/grid-four.png"/>
+        </Grid>
+
         <Image x:Name="BackgroundImage" RenderOptions.BitmapScalingMode="NearestNeighbor" Visibility="Visible" OpacityMask="White" StretchDirection="Both" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top" Source="/images/0251Celebi.png"/>
         <Label x:Name="HoldEscapeText" Content="Hold escape to exit..." FontSize="10" FontWeight="Bold" HorizontalContentAlignment="Left" VerticalContentAlignment="Top" FontFamily="Global User Interface" FontStretch="Normal" Foreground="Black" Height="35" VerticalAlignment="Top" HorizontalAlignment="Left" Width="180" BorderBrush="White" Visibility="Hidden">
             <UIElement.RenderTransform>
@@ -61,6 +65,7 @@
     </Grid>
     <Window.ContextMenu >
         <ContextMenu x:Name="CounterContextMenu" >
+            <MenuItem x:Name="UngroupOption" Header="Ungroup" Click="UngroupOption_Click" />
             <MenuItem x:Name="CurrentFileNameLabel" Header="Hello?" IsEnabled="false">
                 <MenuItem.Icon>
                     <Image Source="/icons/file-text.png"/>
@@ -91,6 +96,26 @@
                 <MenuItem.Icon>
                     <Image Source="/icons/file-text.png"/>
                 </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Groups">
+                <MenuItem.Icon>
+                    <Image Source="/icons/copy.png"/>
+                </MenuItem.Icon>
+                <MenuItem Header="Group all open windows" Click="GroupAllOpenWindows_Clicked">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/copy.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Make a group" Click="MakeGroupOption_Clicked">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/grid-four.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Save group file" Click="SaveGroupFileOption_Clicked">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/file-plus.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
             </MenuItem>
             <MenuItem Header="New profile" Command="cmd:CustomCommands.New">
                 <MenuItem.Icon>
@@ -312,7 +337,7 @@
                     </MenuItem.Icon>
                 </MenuItem>
             </MenuItem>
-                <MenuItem Header="Actions">
+            <MenuItem Header="Actions">
                 <MenuItem.Icon>
                     <Image Source="/icons/lightning.png"/>
                 </MenuItem.Icon>

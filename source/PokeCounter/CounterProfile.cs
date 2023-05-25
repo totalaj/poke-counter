@@ -58,6 +58,8 @@ namespace PokeCounter
         public event IsDirtyChanged DirtyChanged;
 
         public static string DefaultExtension => ".counter";
+        public static string GroupFileExtension => ".counterGroup";
+
 
         public static CounterProfile LoadFrom(string path)
         {
