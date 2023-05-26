@@ -119,6 +119,8 @@ namespace PokeCounter
             games.AddRange(GetSpriteCategoriesFromObject(pokemon.Sprites.generation9));
             games.AddRange(GetSpriteCategoriesFromObject(pokemon.Sprites.other));
 
+            var prevSelectedGame = GameVersionDropdown.SelectedItem as CategoryWrapper;
+
             GameVersionDropdown.Items.Clear();
             foreach (var game in games)
             {
@@ -128,7 +130,7 @@ namespace PokeCounter
 
             bool foundGame = false;
 
-            if (GameVersionDropdown.SelectedItem is CategoryWrapper prevSelectedGame)
+            if (prevSelectedGame != null)
             {
                 foreach (var item in GameVersionDropdown.Items)
                 {
