@@ -35,7 +35,7 @@
         <Grid x:Name="GroupOverlay" Panel.ZIndex="1" Visibility="Collapsed">
             <Image HorizontalAlignment="Center" Height="100" Margin="0,0,0,0" VerticalAlignment="Center" Width="100" Source="/icons/check-circle.png"/>
         </Grid>
-        <Grid x:Name="GroupTag" Panel.ZIndex="1" HorizontalAlignment="Left" VerticalAlignment="Top" Width="30" Height="30" Visibility="Collapsed">
+        <Grid x:Name="GroupTag" Panel.ZIndex="1" HorizontalAlignment="Left" VerticalAlignment="Top" Width="30" Height="30" Visibility="Collapsed" Background="White">
             <Label x:Name="GroupTagLabel" Content="99" FontFamily="Consolas" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </Grid>
         

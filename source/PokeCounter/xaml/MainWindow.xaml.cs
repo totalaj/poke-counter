@@ -173,7 +173,7 @@ namespace PokeCounter
             {
                 groupIndex = startupArguments.groupIndex;
                 groupMode = true;
-                startedAsGroup = true;
+                groupShutdown = true;
             }
 
             if (startupArguments.markAsNew)
@@ -327,17 +327,25 @@ namespace PokeCounter
             }
             rcm.BroadcastMessage(Message.Disconnect, rcm.thisWindow.windowHandle.ToInt32());
 
-            if (!forceClosing && startedAsGroup)
+            if (!forceClosing && groupShutdown)
             {
                 foreach (var window in rcm.otherWindows)
                 {
-                    if (rcm.SendMessage(window, Message.GetGroup).ToInt32() == groupIndex)
+                    if (rcm.SendMessage(window, Message.GetGroup).ToInt32() == groupIndex
+                        && rcm.SendMessage(window, Message.GetGroupShutdown).ToInt32() == 1)
                     {
                         rcm.SendMessage(window, Message.Close, 1);
                     }
                 }
             }
 
+            foreach (var popup in AllPopups)
+            {
+                if (popup != null)
+                {
+                    popup.Close();
+                }
+            }
         }
 
         private void CounterWindow_ContextMenuOpening(object sender, ContextMenuEventArgs e)
@@ -429,13 +437,19 @@ namespace PokeCounter
         private void CounterWindow_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
         {
             UpdateCanResize();
-            GroupTag.Visibility = groupIndex != -1 ? Visibility.Visible : Visibility.Collapsed;
-            GroupTagLabel.Content = groupIndex.ToString();
+            if (!groupEligibilityMode)
+            {
+                GroupTag.Visibility = groupIndex != -1 ? Visibility.Visible : Visibility.Collapsed;
+                GroupTagLabel.Content = groupIndex.ToString();
+            }
         }
 
         private void CounterWindow_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
         {
-            GroupTag.Visibility = Visibility.Collapsed;
+            if (!groupEligibilityMode)
+            {
+                GroupTag.Visibility = Visibility.Collapsed;
+            }
         }
         void UpdateCanResize()
         {
@@ -547,6 +561,7 @@ namespace PokeCounter
                 case Message.SetGroup:
                     {
                         handled = true;
+                        groupShutdown = false;
                         SetGroup(wParam.ToInt32());
                         break;
                     }
@@ -604,8 +619,20 @@ namespace PokeCounter
                     }
                 case Message.Close:
                     {
+                        handled = true;
                         forceClosing = wParam.ToInt32() == 1;
                         Close();
+                        break;
+                    }
+                case Message.GetGroupShutdown:
+                    {
+                        handled = true;
+                        return new IntPtr(groupShutdown ? 1 : 0);
+                    }
+                case Message.SetGroupShutdown:
+                    {
+                        handled = true;
+                        groupShutdown = wParam.ToInt32() == 1;
                         break;
                     }
                 default:
@@ -898,7 +925,7 @@ namespace PokeCounter
 
         #region Group
 
-        bool groupMode = false, startedAsGroup = false;
+        bool groupMode = false, groupShutdown = false;
         bool groupEligibilityMode = false, eligibleForGroup = false;
         int groupIndex = -1;
 
@@ -912,6 +939,7 @@ namespace PokeCounter
         public void SetGroupEligibilityMode(bool eligible)
         {
             groupEligibilityMode = eligible;
+            GroupTag.Visibility = (eligible && groupIndex != -1) ? Visibility.Visible : Visibility.Collapsed;
             if (!eligible)
             {
                 SetEligibleForGroup(false);
@@ -1484,6 +1512,7 @@ namespace PokeCounter
         {
             groupIndex = -1;
             groupMode = false;
+            groupShutdown = false;
         }
 
         CreateGroupPopup createGroupPopup;

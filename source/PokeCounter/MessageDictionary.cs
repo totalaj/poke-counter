@@ -39,6 +39,10 @@ namespace PokeCounter
         /// ReturnValue = Group index
         /// </summary>
         GetGroup,
+        /// <summary>
+        /// ReturnValue = 1 if groupShutdown is true, 0 if false
+        /// </summary>
+        GetGroupShutdown,
         EnterGroupElegibilityMode,
         ExitGroupElegibilityMode,
         /// <summary>
@@ -49,6 +53,10 @@ namespace PokeCounter
         /// ReturnValue = eligibility bool. 0 is false, 1 is true
         /// </summary>
         GetEligibleForGroup,
+        /// <summary>
+        /// wParam = 1 is true, 0 is false
+        /// </summary>
+        SetGroupShutdown,
         RefreshMetaSettings,
         /// <summary>
         /// wParam = 0 is always close normally. 1 is close forcefully
