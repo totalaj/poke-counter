@@ -161,6 +161,9 @@ namespace PokeCounter
             if (data == null) data = new();
         }
 
+        public event Action onSaved;
+        public event IsDirtyChanged DirtyChanged;
+
         public string FilePath
         {
             get
@@ -187,13 +190,25 @@ namespace PokeCounter
 
         public void Save()
         {
-            try
+            bool keepTrying = true;
+
+            while (keepTrying)
             {
-                File.WriteAllText(FilePath, JsonConvert.SerializeObject(data));
-            }
-            catch (Exception)
-            {
-                System.Windows.MessageBox.Show($"Could not save file {FilePath}.\n Is it being used by another process?", "Save failed!", MessageBoxButton.OK, MessageBoxImage.Error);
+                for (int i = 0; i < 10; i++)
+                {
+                    try
+                    {
+                        File.WriteAllText(FilePath, JsonConvert.SerializeObject(data));
+                        onSaved?.Invoke();
+                        return;
+                    }
+                    catch (Exception)
+                    {
+                        System.Threading.Thread.Sleep(100);
+                    }
+                }
+                var result = MessageBox.Show($"Could not save file {FilePath} after 10 attempts.\n Do you want to try again?", "Save failed!", MessageBoxButton.YesNo, MessageBoxImage.Error);
+                keepTrying = result == MessageBoxResult.Yes;
             }
         }
 
