@@ -27,6 +27,7 @@
     <None Remove="icons\brush.png" />
     <None Remove="icons\catalog.png" />
     <None Remove="icons\chart-pie.png" />
+    <None Remove="icons\check-circle.png" />
     <None Remove="icons\clipboard.png" />
     <None Remove="icons\close.png" />
     <None Remove="icons\copy.png" />
@@ -95,6 +96,7 @@
     <Resource Include="icons\brush.png" />
     <Resource Include="icons\catalog.png" />
     <Resource Include="icons\chart-pie.png" />
+    <Resource Include="icons\check-circle.png" />
     <Resource Include="icons\clipboard.png" />
     <Resource Include="icons\close.png" />
     <Resource Include="icons\copy.png" />

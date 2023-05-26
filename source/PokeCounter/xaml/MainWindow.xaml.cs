@@ -95,7 +95,7 @@ namespace PokeCounter
             InitializeComponent();
             Title = WindowTitle;
 
-            ParseArguments(args);
+            startupArguments = new MainWindowArguments(args);
 
             MinHeight = MinimumHeight;
             MinWidth = MinimumWidth;
@@ -109,9 +109,9 @@ namespace PokeCounter
 
             CounterContextMenu.CommandBindings.AddRange(CounterWindow.CommandBindings);
 
-            if (File.Exists(startupFile))
+            if (File.Exists(startupArguments.startupFile))
             {
-                OpenFile(startupFile);
+                OpenFile(startupArguments.startupFile);
             }
             if (File.Exists(metaSettings.data.lastProfilePath) && currentProfile == null)
             {
@@ -159,52 +159,30 @@ namespace PokeCounter
             SetAlwaysOnTopOption(metaSettings.data.topmost, true);
             SetEdgeHighlights(0);
 
-            if (markAsNew)
+            if (startupArguments.groupIndex != -1)
+            {
+                groupIndex = startupArguments.groupIndex;
+                groupMode = true;
+            }
+
+            if (startupArguments.markAsNew)
             {
                 currentProfile.path = null;
                 currentProfile.SetIsDirty(true);
             }
-
-            if (startHidden)
-            {
-                Hide();
-            }
         }
 
-        bool markAsNew = false;
-        bool startHidden = false;
-        string startupFile;
-
-        void ParseArguments(string[] args)
+        public class MainWindowArguments : ArgumentParser
         {
-            for (int i = 0; i < args.Length; i++)
-            {
-                string arg = args[i];
-                if (File.Exists(arg))
-                {
-                    startupFile = arg;
-                }
-                if (arg.StartsWith("-n"))
-                {
-                    markAsNew = true;
-                }
-                if (arg.StartsWith("-g"))
-                {
-                    if (i + 1 < args.Length)
-                    {
-                        i++;
-                        if (int.TryParse(args[i], out groupIndex))
-                        {
-                            if (groupIndex != -1) groupMode = true;
-                        }
-                    }
-                }
-                if (arg.StartsWith("-h"))
-                {
-                    startHidden = true;
-                }
-            }
+            public MainWindowArguments(string[] args) : base(args) { }
+
+            public FileArgument startupFile = new FileArgument();
+            public IntArgument groupIndex = new IntArgument("-g", -1);
+            public BoolArgument markAsNew = new BoolArgument("-n");
+            public BoolArgument startHidden = new BoolArgument("-h");
         }
+
+        MainWindowArguments startupArguments;
 
         private void CounterWindow_MouseDown(object sender, MouseButtonEventArgs e)
         {
@@ -258,8 +236,41 @@ namespace PokeCounter
             }
         }
 
+        List<Window> AllPopups => new List<Window>()
+            {
+                backgroundColorPickerPopup,
+                createGroupPopup,
+                statTextColorPickerPopup,
+                textColorPickerPopup
+            };
+
+        bool CanClose()
+        {
+            bool canClose = true;
+            AllPopups.ForEach((Window w) =>
+            {
+                if (w != null)
+                {
+                    if (w.IsLoaded)
+                    {
+                        canClose = false;
+                    }
+                }
+            });
+
+            if (groupEligibilityMode) canClose = false;
+
+            return canClose;
+        }
+
         private void CounterWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            if (!CanClose())
+            {
+                e.Cancel = true;
+                return;
+            }
+
             if (currentProfile.path != null)
             {
                 metaSettings.data.lastProfilePath = currentProfile.path;
@@ -306,6 +317,12 @@ namespace PokeCounter
 
         private void CounterWindow_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
+            if (groupEligibilityMode)
+            {
+                e.Handled = true;
+                return;
+            }
+
             while (RecentProfilesOption.Items.Count > 3)
             {
                 RecentProfilesOption.Items.RemoveAt(3);
@@ -416,7 +433,7 @@ namespace PokeCounter
         protected override void OnSourceInitialized(EventArgs e)
         {
             base.OnSourceInitialized(e);
-            if (startHidden)
+            if (startupArguments.startHidden)
             {
                 Hide();
             }
@@ -1451,7 +1468,7 @@ namespace PokeCounter
                         }
                     }
 
-                    File.Copy(CommonGroupFile, saveFileDialog.FileName);
+                    File.Copy(CommonGroupFile, saveFileDialog.FileName, true);
                 }
             };
         }

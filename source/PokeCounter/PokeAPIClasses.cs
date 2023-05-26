@@ -768,7 +768,12 @@ namespace PokeCounter
 
     public class PokemonInfo
     {
-        public override string ToString() => name;
+        public override string ToString()
+        {
+            if (this.name.Length == 0) return "";
+            string name = this.name.Substring(1);
+            return name.Insert(0, char.ToUpperInvariant(this.name[0]).ToString());
+        }
 
         [JsonProperty("name")]
         public string name;

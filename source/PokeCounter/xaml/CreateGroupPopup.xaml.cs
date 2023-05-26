@@ -47,7 +47,16 @@ namespace PokeCounter
 
         public void Complete()
         {
-            success = true;
+            int groupCount = 0;
+            foreach (var window in rcm.AllWindows)
+            {
+                if (rcm.SendMessage(window, Message.GetEligibleForGroup).ToInt32() == 1)
+                {
+                    groupCount++;
+                }
+            }
+
+            success = groupCount > 1;
             Close();
         }
 
