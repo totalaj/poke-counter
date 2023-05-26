@@ -429,8 +429,14 @@ namespace PokeCounter
         private void CounterWindow_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
         {
             UpdateCanResize();
+            GroupTag.Visibility = groupIndex != -1 ? Visibility.Visible : Visibility.Collapsed;
+            GroupTagLabel.Content = groupIndex.ToString();
         }
 
+        private void CounterWindow_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            GroupTag.Visibility = Visibility.Collapsed;
+        }
         void UpdateCanResize()
         {
             const double ExtraCheckSize = 10;
@@ -900,6 +906,7 @@ namespace PokeCounter
         {
             this.groupIndex = groupIndex;
             groupMode = groupIndex != -1;
+            GroupTagLabel.Content = groupIndex.ToString();
         }
 
         public void SetGroupEligibilityMode(bool eligible)
@@ -1245,7 +1252,7 @@ namespace PokeCounter
 
             if (popup.ShowDialog().GetValueOrDefault(false))
             {
-                metaSettings.data.decrementHotkey.keys = popup.value;  
+                metaSettings.data.decrementHotkey.keys = popup.value;
             }
             TryRegisterHotkey(ref decrementHook, metaSettings.data.decrementHotkey, DecrementHook_KeyPressed);
         }
@@ -2059,6 +2066,8 @@ namespace PokeCounter
             EnsureFileAssociation();
             System.Windows.MessageBox.Show(".counter and .counterGroup files will now open with this executable", "Success!");
         }
+
+
         public static bool IsAdministrator =>
              new WindowsPrincipal(WindowsIdentity.GetCurrent())
                  .IsInRole(WindowsBuiltInRole.Administrator);
