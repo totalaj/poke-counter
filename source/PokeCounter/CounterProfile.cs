@@ -29,6 +29,8 @@ namespace PokeCounter
 
     class CounterProfile : IUndoObject<CounterProfile>, IDirtyable
     {
+        [JsonIgnore]
+        public string Name => Path.GetFileName(path);
         public string path = null;
         public int count = 0;
         public int incrementAmount = 1;

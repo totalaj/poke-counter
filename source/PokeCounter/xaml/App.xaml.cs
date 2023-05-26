@@ -29,7 +29,7 @@ namespace PokeCounter
                 List<Process> processes = new List<Process>();
                 foreach (var counter in counters)
                 {
-                    var process = Process.Start(Paths.Executable, $"\"{counter}\" -g {highestCurrentGroup + 1} -h");
+                    var process = Process.Start(Paths.Executable, $"\"{counter}\" -g {highestCurrentGroup + 1} -h -skipReload");
                     processes.Add(process);
                 }
 

@@ -29,9 +29,9 @@ namespace PokeCounter
         public GlobalHotkey decrementHotkey = new GlobalHotkey(Keys.Subtract, 0);
         public bool topmost = true;
         public bool autosave = true;
-        public void Verify()
+        public bool Verify()
         {
-            recentProfiles.RemoveWhere(s => !File.Exists(s));
+            return recentProfiles.RemoveWhere(s => !File.Exists(s)) > 0;
         }
     }
     /// <summary>
@@ -100,11 +100,16 @@ namespace PokeCounter
             MinHeight = MinimumHeight;
             MinWidth = MinimumWidth;
 
-            RefreshPokemonDatas();
-            EnsureFileAssociation();
+            if (!startupArguments.skipReload)
+            {
+                RefreshPokemonDatas();
+                EnsureFileAssociation();
+                if (metaSettings.data.Verify())
+                {
+                    metaSettings.Save();
+                }
+            }
 
-            metaSettings.data.Verify();
-            metaSettings.Save();
             AutosaveOption.IsChecked = metaSettings.data.autosave;
 
             CounterContextMenu.CommandBindings.AddRange(CounterWindow.CommandBindings);
@@ -159,16 +164,31 @@ namespace PokeCounter
             SetAlwaysOnTopOption(metaSettings.data.topmost, true);
             SetEdgeHighlights(0);
 
+            metaSettings.onSaved += () =>
+            {
+                rcm.BroadcastMessage(Message.RefreshMetaSettings);
+            };
+
             if (startupArguments.groupIndex != -1)
             {
                 groupIndex = startupArguments.groupIndex;
                 groupMode = true;
+                startedAsGroup = true;
             }
 
             if (startupArguments.markAsNew)
             {
                 currentProfile.path = null;
                 currentProfile.SetIsDirty(true);
+            }
+
+            if (!(startupArguments.xPosition.Equals(double.NaN) || !startupArguments.yPosition.Equals(double.NaN)))
+            {
+                Left = startupArguments.xPosition;
+                Top = startupArguments.yPosition;
+                currentProfile.windowTop = Top;
+                currentProfile.windowLeft = Left;
+                currentProfile.Save();
             }
         }
 
@@ -180,6 +200,9 @@ namespace PokeCounter
             public IntArgument groupIndex = new IntArgument("-g", -1);
             public BoolArgument markAsNew = new BoolArgument("-n");
             public BoolArgument startHidden = new BoolArgument("-h");
+            public BoolArgument skipReload = new BoolArgument("-skipReload");
+            public DoubleArgument xPosition = new DoubleArgument("-x", double.NaN);
+            public DoubleArgument yPosition = new DoubleArgument("-y", double.NaN);
         }
 
         MainWindowArguments startupArguments;
@@ -201,7 +224,7 @@ namespace PokeCounter
             }
             if (e.MiddleButton == MouseButtonState.Pressed)
             {
-                Close();
+                Commands.CustomCommands.Close.Execute(null, this);
             }
         }
 
@@ -263,28 +286,16 @@ namespace PokeCounter
             return canClose;
         }
 
+        bool forceClosing = false;
         private void CounterWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            if (!CanClose())
-            {
-                e.Cancel = true;
-                return;
-            }
-
-            if (currentProfile.path != null)
-            {
-                metaSettings.data.lastProfilePath = currentProfile.path;
-                metaSettings.data.recentProfiles.Add(currentProfile.path);
-                metaSettings.Save();
-            }
-
             if (currentProfile.GetIsDirty())
             {
                 MessageBoxResult result = MessageBoxResult.Yes;
 
                 if (!metaSettings.data.autosave)
                 {
-                    result = System.Windows.MessageBox.Show("You have unsaved changes!\nWould you like to save?", "Wait!", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
+                    result = System.Windows.MessageBox.Show("You have unsaved changes!\nWould you like to save?", currentProfile.Name, MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
                 }
 
                 if (result == MessageBoxResult.Yes)
@@ -294,7 +305,7 @@ namespace PokeCounter
                     {
                         if (!metaSettings.data.autosave)
                             saveSucceeded = currentProfile.SaveAs();
-                        else // Basically ignore save as if autosave is on
+                        else // Basically ignore "save as" if autosave is on
                             saveSucceeded = true;
                     }
                     else
@@ -305,14 +316,28 @@ namespace PokeCounter
                     if (!saveSucceeded)
                     {
                         e.Cancel = true;
+                        return;
                     }
                 }
                 if (result == MessageBoxResult.Cancel)
                 {
                     e.Cancel = true;
+                    return;
                 }
             }
             rcm.BroadcastMessage(Message.Disconnect, rcm.thisWindow.windowHandle.ToInt32());
+
+            if (!forceClosing && startedAsGroup)
+            {
+                foreach (var window in rcm.otherWindows)
+                {
+                    if (rcm.SendMessage(window, Message.GetGroup).ToInt32() == groupIndex)
+                    {
+                        rcm.SendMessage(window, Message.Close, 1);
+                    }
+                }
+            }
+
         }
 
         private void CounterWindow_ContextMenuOpening(object sender, ContextMenuEventArgs e)
@@ -565,6 +590,18 @@ namespace PokeCounter
                         rcm.GatherWindows();
                         break;
                     }
+                case Message.RefreshMetaSettings:
+                    {
+                        handled = true;
+                        metaSettings.Load();
+                        break;
+                    }
+                case Message.Close:
+                    {
+                        forceClosing = wParam.ToInt32() == 1;
+                        Close();
+                        break;
+                    }
                 default:
                     break;
             }
@@ -589,6 +626,9 @@ namespace PokeCounter
                             rcm.RecieveData(out Vector delta);
                             Left += delta.X;
                             Top += delta.Y;
+                            currentProfile.windowTop = Top;
+                            currentProfile.windowLeft = Left;
+                            SetDirty();
                         }
                         break;
                     }
@@ -852,7 +892,7 @@ namespace PokeCounter
 
         #region Group
 
-        bool groupMode = false;
+        bool groupMode = false, startedAsGroup = false;
         bool groupEligibilityMode = false, eligibleForGroup = false;
         int groupIndex = -1;
 
@@ -947,6 +987,12 @@ namespace PokeCounter
             TryRegisterHotkey(ref incrementHook, metaSettings.data.incrementHotkey, IncrementHook_KeyPressed);
             TryRegisterHotkey(ref decrementHook, metaSettings.data.decrementHotkey, DecrementHook_KeyPressed);
 
+            if (profile.path != null)
+            {
+                metaSettings.data.recentProfiles.Add(profile.path);
+                metaSettings.Save();
+            }
+
             RefreshAll();
         }
 
@@ -972,7 +1018,7 @@ namespace PokeCounter
             if (currentProfile != null)
                 if (currentProfile.GetIsDirty())
                 {
-                    var result = System.Windows.MessageBox.Show("Do you want to save your current profile before loading the new one?", "Wait", MessageBoxButton.YesNo);
+                    var result = System.Windows.MessageBox.Show("Do you want to save your current profile before loading the new one?", currentProfile.Name, MessageBoxButton.YesNo);
 
                     if (result == MessageBoxResult.Yes)
                         Commands.CustomCommands.Save.Execute(null, this);
@@ -984,6 +1030,8 @@ namespace PokeCounter
                 InitializeFromProfile(profile);
                 undoList.Clear();
                 metaSettings.data.recentProfiles.Add(path);
+                metaSettings.data.lastProfilePath = path;
+                metaSettings.Save();
             }
         }
 
@@ -1101,7 +1149,7 @@ namespace PokeCounter
         // Close
         private void CloseCommand_CanExecute(object sender, CanExecuteRoutedEventArgs e)
         {
-            e.CanExecute = true;
+            e.CanExecute = CanClose();
         }
 
         private void CloseCommand_Executed(object sender, ExecutedRoutedEventArgs e)
@@ -1142,7 +1190,7 @@ namespace PokeCounter
 
         private void DuplicateCommand_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            Process.Start(Paths.Executable, "\"" + currentProfile.path + "\" -n");
+            Process.Start(Paths.Executable, "\"" + currentProfile.path + "\" -n -skipReload");
         }
 
         #endregion
@@ -1197,7 +1245,7 @@ namespace PokeCounter
 
             if (popup.ShowDialog().GetValueOrDefault(false))
             {
-                metaSettings.data.decrementHotkey.keys = popup.value;
+                metaSettings.data.decrementHotkey.keys = popup.value;  
             }
             TryRegisterHotkey(ref decrementHook, metaSettings.data.decrementHotkey, DecrementHook_KeyPressed);
         }

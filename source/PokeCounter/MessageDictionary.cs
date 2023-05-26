@@ -49,6 +49,11 @@ namespace PokeCounter
         /// ReturnValue = eligibility bool. 0 is false, 1 is true
         /// </summary>
         GetEligibleForGroup,
+        RefreshMetaSettings,
+        /// <summary>
+        /// wParam = 0 is always close normally. 1 is close forcefully
+        /// </summary>
+        Close
     }
     /// <summary>
     /// Sends a struct immediately, is read by the reciever, and is disposed
