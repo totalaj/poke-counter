@@ -97,6 +97,7 @@ namespace PokeCounter
         {
             SaveFileDialog saveFileDialog = new SaveFileDialog();
             saveFileDialog.DefaultExt = DefaultExtension;
+            saveFileDialog.Filter = $"Counter file (*{DefaultExtension})|*{DefaultExtension}";
             saveFileDialog.AddExtension = true;
             saveFileDialog.Title = "Save Counter Profile";
             if (path != null)

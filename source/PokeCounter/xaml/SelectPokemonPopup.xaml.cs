@@ -37,58 +37,57 @@ namespace PokeCounter
             PopupWindow.Title = "Set " + valueName;
             RenderOptions.SetBitmapScalingMode(PreviewImage, bitmapScalingMode);
             new DispatcherTimer(
-    TimeSpan.FromMilliseconds(100), DispatcherPriority.Render,
-    delegate
-    {
-        if (requests.Count == 0) return;
-        var downloadRequest = requests.Dequeue();
+                TimeSpan.FromMilliseconds(100), DispatcherPriority.Render,
+                delegate
+                {
+                    if (requests.Count == 0) return;
+                    var downloadRequest = requests.Dequeue();
 
-        string extension = "";
-        if (downloadRequest.imageURL != null)
-            extension = System.IO.Path.GetExtension(downloadRequest.imageURL);
-        string targetFile = System.IO.Path.Combine(Paths.ImageCacheDirectory, currentCategory.uniqueIdentifier
-        + "_" + currentPokemon.name + "_" + SpriteCategory.OptionEnumToString(downloadRequest.options) + extension);
+                    string extension = "";
+                    if (downloadRequest.imageURL != null)
+                        extension = System.IO.Path.GetExtension(downloadRequest.imageURL);
+                    string targetFile = System.IO.Path.Combine(Paths.ImageCacheDirectory, downloadRequest.categoryIdentifier
+                    + "_" + downloadRequest.pokemonName + "_" + SpriteCategory.OptionEnumToString(downloadRequest.options) + extension);
 
-        if (downloadRequest.imageURL != null)
-        {
-            DownloadManager.DownloadImage(downloadRequest.imageURL, targetFile);
-        }
+                    if (downloadRequest.imageURL != null)
+                    {
+                        DownloadManager.DownloadImage(downloadRequest.imageURL, targetFile);
+                    }
 
-        if (!File.Exists(targetFile) || downloadRequest.imageURL == null)
-        {
-            ImageBehavior.SetAnimatedSource(PreviewImage, null);
-            PreviewImage.Source = InvalidImageHolder.Source;
-            return;
-        }
-        try
-        {
-            imagePath = targetFile;
+                    if (!File.Exists(targetFile) || downloadRequest.imageURL == null)
+                    {
+                        ImageBehavior.SetAnimatedSource(PreviewImage, null);
+                        PreviewImage.Source = InvalidImageHolder.Source;
+                        return;
+                    }
+                    try
+                    {
+                        imagePath = targetFile;
 
-            FileInfo finfo = new FileInfo(imagePath);
+                        FileInfo finfo = new FileInfo(imagePath);
 
-            BitmapImage bmp = new BitmapImage(new Uri(imagePath));
+                        BitmapImage bmp = new BitmapImage(new Uri(imagePath));
 
-            if (bmp == null) return;
+                        if (bmp == null) return;
 
-            if (finfo.Extension == ".gif")
-            {
-                ImageBehavior.SetAnimatedSource(PreviewImage, bmp);
-                PreviewImage.Source = null;
-            }
-            else
-            {
-                ImageBehavior.SetAnimatedSource(PreviewImage, null);
-                PreviewImage.Source = bmp;
-            }
-        }
-        catch
-        {
-            ImageBehavior.SetAnimatedSource(PreviewImage, null);
-            PreviewImage.Source = InvalidImageHolder.Source;
-        }
-    },
-    Dispatcher);
-
+                        if (finfo.Extension == ".gif")
+                        {
+                            ImageBehavior.SetAnimatedSource(PreviewImage, bmp);
+                            PreviewImage.Source = null;
+                        }
+                        else
+                        {
+                            ImageBehavior.SetAnimatedSource(PreviewImage, null);
+                            PreviewImage.Source = bmp;
+                        }
+                    }
+                    catch
+                    {
+                        ImageBehavior.SetAnimatedSource(PreviewImage, null);
+                        PreviewImage.Source = InvalidImageHolder.Source;
+                    }
+                },
+                Dispatcher);
         }
 
         private void PokemonDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -313,6 +312,8 @@ namespace PokeCounter
         class DownloadRequest
         {
             public string imageURL;
+            public string categoryIdentifier;
+            public string pokemonName;
             public Options options;
         }
 
@@ -330,10 +331,16 @@ namespace PokeCounter
 
             var options = GetCurrentOptions();
 
+            string pokemonName = "", categoryIdentifier = "";
+            if (PokemonDropdown.SelectedItem is PokemonInfo pInfo) pokemonName = pInfo.name;
+            if (GameVersionDropdown.SelectedItem is CategoryWrapper cWrapper) categoryIdentifier = cWrapper.uniqueIdentifier;
+
             requests.Enqueue(new DownloadRequest()
             {
                 imageURL = (currentCategory.category).GetSpriteFromOptions(options),
-                options = options
+                options = options,
+                categoryIdentifier = categoryIdentifier,
+                pokemonName = pokemonName
             });
 
             FemaleProperty.IsEnabled = currentCategory.category.GetSpriteFromOptions(options | Options.female) != null;

@@ -1123,6 +1123,7 @@ namespace PokeCounter
         {
             System.Windows.Forms.OpenFileDialog openFileDialog = new System.Windows.Forms.OpenFileDialog();
             openFileDialog.DefaultExt = CounterProfile.DefaultExtension;
+            openFileDialog.Filter = $"Counter file (*{CounterProfile.DefaultExtension})|*{CounterProfile.DefaultExtension}";
             openFileDialog.Title = "Open Counter Profile";
             openFileDialog.InitialDirectory = System.IO.Path.GetDirectoryName(currentProfile.path);
 
@@ -1530,6 +1531,7 @@ namespace PokeCounter
                 {
                     SaveFileDialog saveFileDialog = new SaveFileDialog();
                     saveFileDialog.DefaultExt = CounterProfile.GroupFileExtension;
+                    saveFileDialog.Filter = $"Counter group file (*{CounterProfile.GroupFileExtension})|*{CounterProfile.GroupFileExtension}";
                     saveFileDialog.AddExtension = true;
                     saveFileDialog.Title = "Save Counter Group";
                     if (currentProfile.path != null)
@@ -1652,6 +1654,7 @@ namespace PokeCounter
                                   + "|TIF|*.tif;*.tiff"
                                   + "|ICO|*.ico;*.ICO";
             openFileDialog.InitialDirectory = System.IO.Path.GetDirectoryName(currentProfile.backgroundImagePath);
+            openFileDialog.AddExtension = true;
 
             var result = openFileDialog.ShowDialog();
             if (result != System.Windows.Forms.DialogResult.OK) return;
