@@ -996,6 +996,13 @@ namespace PokeCounter
             SetSizeLocked(profile.sizeLocked, true);
             SetShowOdds(profile.showOdds, true);
             SetFiltering(profile.bitmapScalingMode);
+
+            if (profile.cachedImageURL != null && profile.cachedRelativeFileLocation != null)
+                if (!File.Exists(profile.backgroundImagePath) && profile.cachedImageURL.Length > 0 && profile.cachedRelativeFileLocation.Length > 0)
+                {
+                    DownloadManager.DownloadImage(profile.cachedImageURL, profile.backgroundImagePath);
+                }
+
             if (File.Exists(profile.backgroundImagePath))
             {
                 bool wantToLoad = false;
@@ -1212,6 +1219,9 @@ namespace PokeCounter
                 currentProfile.cachedPokemonGame = popup.cachedGame;
                 currentProfile.cachedPokemonOptions = popup.cachedOptions;
                 currentProfile.cachedPokemonIndex = popup.cachedPokemon;
+                currentProfile.cachedImageURL = popup.imageURL;
+                currentProfile.cachedRelativeFileLocation = popup.relativeImagePath;
+
                 LoadImageFromFile(popup.imagePath);
                 RefreshAll();
                 PushChange();
@@ -1659,6 +1669,9 @@ namespace PokeCounter
             var result = openFileDialog.ShowDialog();
             if (result != System.Windows.Forms.DialogResult.OK) return;
             if (!File.Exists(openFileDialog.FileName)) return;
+
+            currentProfile.cachedImageURL = "";
+            currentProfile.cachedRelativeFileLocation = "";
 
             LoadImageFromFile(openFileDialog.FileName);
             PushChange();

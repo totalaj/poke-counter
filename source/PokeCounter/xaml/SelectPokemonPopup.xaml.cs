@@ -41,53 +41,59 @@ namespace PokeCounter
                 delegate
                 {
                     if (requests.Count == 0) return;
-                    var downloadRequest = requests.Dequeue();
-
-                    string extension = "";
-                    if (downloadRequest.imageURL != null)
-                        extension = System.IO.Path.GetExtension(downloadRequest.imageURL);
-                    string targetFile = System.IO.Path.Combine(Paths.ImageCacheDirectory, downloadRequest.categoryIdentifier
-                    + "_" + downloadRequest.pokemonName + "_" + SpriteCategory.OptionEnumToString(downloadRequest.options) + extension);
-
-                    if (downloadRequest.imageURL != null)
-                    {
-                        DownloadManager.DownloadImage(downloadRequest.imageURL, targetFile);
-                    }
-
-                    if (!File.Exists(targetFile) || downloadRequest.imageURL == null)
-                    {
-                        ImageBehavior.SetAnimatedSource(PreviewImage, null);
-                        PreviewImage.Source = InvalidImageHolder.Source;
-                        return;
-                    }
-                    try
-                    {
-                        imagePath = targetFile;
-
-                        FileInfo finfo = new FileInfo(imagePath);
-
-                        BitmapImage bmp = new BitmapImage(new Uri(imagePath));
-
-                        if (bmp == null) return;
-
-                        if (finfo.Extension == ".gif")
-                        {
-                            ImageBehavior.SetAnimatedSource(PreviewImage, bmp);
-                            PreviewImage.Source = null;
-                        }
-                        else
-                        {
-                            ImageBehavior.SetAnimatedSource(PreviewImage, null);
-                            PreviewImage.Source = bmp;
-                        }
-                    }
-                    catch
-                    {
-                        ImageBehavior.SetAnimatedSource(PreviewImage, null);
-                        PreviewImage.Source = InvalidImageHolder.Source;
-                    }
+                    ProcessRequest(requests.Dequeue());
                 },
                 Dispatcher);
+        }
+
+        void ProcessRequest(DownloadRequest downloadRequest)
+        {
+            string extension = "";
+            if (downloadRequest.imageURL != null)
+                extension = System.IO.Path.GetExtension(downloadRequest.imageURL);
+            string relativeTargetPath = downloadRequest.categoryIdentifier
+            + "_" + downloadRequest.pokemonName + "_" + SpriteCategory.OptionEnumToString(downloadRequest.options) + extension;
+            string targetFile = System.IO.Path.Combine(Paths.ImageCacheDirectory, relativeTargetPath);
+
+            if (downloadRequest.imageURL != null)
+            {
+                DownloadManager.DownloadImage(downloadRequest.imageURL, targetFile);
+            }
+
+            if (!File.Exists(targetFile) || downloadRequest.imageURL == null)
+            {
+                ImageBehavior.SetAnimatedSource(PreviewImage, null);
+                PreviewImage.Source = InvalidImageHolder.Source;
+                return;
+            }
+            try
+            {
+                imagePath = targetFile;
+                relativeImagePath = relativeTargetPath;
+                imageURL = downloadRequest.imageURL;
+
+                FileInfo finfo = new FileInfo(imagePath);
+
+                BitmapImage bmp = new BitmapImage(new Uri(imagePath));
+
+                if (bmp == null) return;
+
+                if (finfo.Extension == ".gif")
+                {
+                    ImageBehavior.SetAnimatedSource(PreviewImage, bmp);
+                    PreviewImage.Source = null;
+                }
+                else
+                {
+                    ImageBehavior.SetAnimatedSource(PreviewImage, null);
+                    PreviewImage.Source = bmp;
+                }
+            }
+            catch
+            {
+                ImageBehavior.SetAnimatedSource(PreviewImage, null);
+                PreviewImage.Source = InvalidImageHolder.Source;
+            }
         }
 
         private void PokemonDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -323,6 +329,7 @@ namespace PokeCounter
         public Pokemon currentPokemon;
         public string targetResolution;
         public string relativeDirectory;
+        public string relativeImagePath, imageURL;
         bool init = false;
 
         void UpdateImage()
@@ -359,6 +366,8 @@ namespace PokeCounter
             cachedGame = currentCategory;
             cachedPokemon = PokemonDropdown.SelectedIndex;
             cachedOptions = GetCurrentOptions();
+
+            if (requests.Count > 0) ProcessRequest(requests.Last());
 
             DialogResult = result;
             Close();
@@ -449,6 +458,11 @@ namespace PokeCounter
             {
                 InitializeCategoryListFromPokemon(pokemon);
             }
+        }
+
+        private void PopupWindow_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.MiddleButton == MouseButtonState.Pressed) Close();
         }
     }
 }

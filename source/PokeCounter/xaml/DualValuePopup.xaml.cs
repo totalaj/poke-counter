@@ -111,5 +111,10 @@ namespace PokeCounter
 
             invalidValueText2.Visibility = result ? Visibility.Hidden : Visibility.Visible;
         }
+
+        private void PopupWindow_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.MiddleButton == MouseButtonState.Pressed) Close();
+        }
     }
 }

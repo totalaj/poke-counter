@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PokeCounter"
         mc:Ignorable="d"
-        Title="Set counter value" Height="101" Width="252" ResizeMode="NoResize" Topmost="True" SizeToContent="WidthAndHeight" IsVisibleChanged="Window_IsVisibleChanged">
+        Title="Set counter value" Height="101" Width="252" ResizeMode="NoResize" Topmost="True" SizeToContent="WidthAndHeight" IsVisibleChanged="Window_IsVisibleChanged" MouseDown="PopupWindow_MouseDown">
     <Grid HorizontalAlignment="Center" Width="228" Height="83" VerticalAlignment="Top">
         <TextBox x:Name="valueProperty" TextWrapping="Wrap" Margin="0,9,0,0" Height="20" VerticalAlignment="Top" HorizontalAlignment="Center" Width="209" TabIndex="1" GotStylusCapture="ValueProperty_GotStylusCapture" GotFocus="ValueProperty_GotFocus" TextChanged="ValueProperty_TextChanged"/>
         <Button x:Name="OKButton" Content="OK" Margin="10,0,0,10" IsDefault="True" Width="100" HorizontalAlignment="Left" TabIndex="3" Height="25" VerticalAlignment="Bottom" Click="OKButton_Click"/>

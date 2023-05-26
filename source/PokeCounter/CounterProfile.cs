@@ -54,6 +54,8 @@ namespace PokeCounter
         {
             uniqueIdentifier = "official"
         };
+        public string cachedImageURL = "";
+        public string cachedRelativeFileLocation = "";
 
         [JsonIgnore]
         private bool isDirty;

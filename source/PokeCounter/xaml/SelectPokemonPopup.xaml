@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PokeCounter"
         mc:Ignorable="d"
-        Title="Set counter value" ResizeMode="NoResize" Topmost="True" SizeToContent="WidthAndHeight" IsVisibleChanged="Window_IsVisibleChanged">
+        Title="Set counter value" ResizeMode="NoResize" Topmost="True" SizeToContent="WidthAndHeight" IsVisibleChanged="Window_IsVisibleChanged" MouseDown="PopupWindow_MouseDown">
     <Grid HorizontalAlignment="Stretch" Width="386" VerticalAlignment="Top">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>

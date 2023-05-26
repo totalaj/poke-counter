@@ -84,5 +84,10 @@ namespace PokeCounter
         {
             Close();
         }
+
+        private void PopupWindow_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.MiddleButton == MouseButtonState.Pressed) Close();
+        }
     }
 }
