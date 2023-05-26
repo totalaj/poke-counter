@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -25,11 +26,12 @@ namespace PokeCounter
             {
                 var rcm = new RemoteControlManager();
                 int highestCurrentGroup = PokeCounter.MainWindow.GetNextAvailableGroupIndex(rcm);
-                string[] counters = File.ReadAllLines(startupFile);
+                CounterGroup group = JsonConvert.DeserializeObject<CounterGroup>(File.ReadAllText(startupFile));
                 List<Process> processes = new List<Process>();
-                foreach (var counter in counters)
+                foreach (var counter in group.counters)
                 {
-                    var process = Process.Start(Paths.Executable, $"\"{counter}\" -g {highestCurrentGroup + 1} -h -skipReload");
+                    var process = Process.Start(Paths.Executable, $"\"{counter.profilePath}\" -g {highestCurrentGroup + 1} -h -skipReload " +
+                        $"-y {counter.layout.WindowTop} -x {counter.layout.WindowLeft}");
                     processes.Add(process);
                 }
 

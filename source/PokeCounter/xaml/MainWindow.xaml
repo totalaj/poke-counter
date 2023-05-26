@@ -38,8 +38,8 @@
         <Grid x:Name="GroupTag" Panel.ZIndex="1" HorizontalAlignment="Left" VerticalAlignment="Top" Width="30" Height="30" Visibility="Collapsed" Background="White">
             <Label x:Name="GroupTagLabel" Content="99" FontFamily="Consolas" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </Grid>
-        
-        
+
+
         <Image x:Name="BackgroundImage" RenderOptions.BitmapScalingMode="HighQuality" Visibility="Visible" OpacityMask="White" StretchDirection="Both" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top" Source="/images/0251Celebi.png"/>
         <Label x:Name="HoldEscapeText" Content="Hold escape to exit..." FontSize="10" FontWeight="Bold" HorizontalContentAlignment="Left" VerticalContentAlignment="Top" FontFamily="Global User Interface" FontStretch="Normal" Foreground="Black" Height="35" VerticalAlignment="Top" HorizontalAlignment="Left" Width="180" BorderBrush="White" Visibility="Hidden">
             <UIElement.RenderTransform>
@@ -370,6 +370,12 @@
                         <Image Source="/icons/minus.png"/>
                     </MenuItem.Icon>
                 </MenuItem>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="Issues/feedback" Click="LeaveFeedbackOption_Click">
+                <MenuItem.Icon>
+                    <Image Source="/icons/github-mark.png"/>
+                </MenuItem.Icon>
             </MenuItem>
             <MenuItem Header="Exit" Command="cmd:CustomCommands.Close">
                 <MenuItem.Icon>

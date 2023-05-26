@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Windows;
 using System.Windows.Forms;
@@ -48,14 +49,13 @@ namespace PokeCounter
         public Color backgroundColor = Color.FromRgb(255, 255, 255);
         public bool showOdds = true;
         public BitmapScalingMode bitmapScalingMode = BitmapScalingMode.HighQuality;
-        public int cachedPokemonIndex = 0;
+        public int cachedPokemonIndex = -1;
         public Options cachedPokemonOptions = 0;
         public CategoryWrapper cachedPokemonGame = new CategoryWrapper()
         {
             uniqueIdentifier = "official"
         };
         public string cachedImageURL = "";
-        public string cachedRelativeFileLocation = "";
 
         [JsonIgnore]
         private bool isDirty;
@@ -150,5 +150,16 @@ namespace PokeCounter
             this.isDirty = isDirty;
             DirtyChanged?.Invoke(isDirty);
         }
+    }
+
+    class CounterGroup
+    {
+        public class CounterInfo
+        {
+            public string profilePath;
+            public MainWindow.LayoutData layout;
+        }
+
+        public List<CounterInfo> counters = new List<CounterInfo>();
     }
 }

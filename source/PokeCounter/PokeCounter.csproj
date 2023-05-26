@@ -45,9 +45,11 @@
     <None Remove="icons\fullscreen-exit.png" />
     <None Remove="icons\fullscreen.png" />
     <None Remove="icons\funnel.png" />
+    <None Remove="icons\github-mark.png" />
     <None Remove="icons\grid-four.png" />
     <None Remove="icons\heart.png" />
     <None Remove="icons\image.png" />
+    <None Remove="icons\info.png" />
     <None Remove="icons\layers.png" />
     <None Remove="icons\lightning.png" />
     <None Remove="icons\link-chain.png" />
@@ -114,9 +116,11 @@
     <Resource Include="icons\fullscreen-exit.png" />
     <Resource Include="icons\fullscreen.png" />
     <Resource Include="icons\funnel.png" />
+    <Resource Include="icons\github-mark.png" />
     <Resource Include="icons\grid-four.png" />
     <Resource Include="icons\heart.png" />
     <Resource Include="icons\image.png" />
+    <Resource Include="icons\info.png" />
     <Resource Include="icons\layers.png" />
     <Resource Include="icons\lightning.png" />
     <Resource Include="icons\link-chain.png" />

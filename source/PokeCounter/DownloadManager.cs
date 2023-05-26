@@ -150,6 +150,23 @@ namespace PokeCounter
             return text;
         }
 
+        public static string DownloadPokemonImage(string url)
+        {
+            if (url == null) return "";
+            string[] split = url.Split("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/");
+            if (split.Length == 0) return "";
+
+            string path = split.Last();
+            path = Path.Combine(Paths.ImageCacheDirectory, path);
+            string dir = Path.GetDirectoryName(path);
+            if (!Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+            DownloadImage(url, path);
+            return path;
+        }
+
         public static void DownloadImage(string url, string targetFile, WebClient c = null)
         {
             if (c == null) c = new WebClient();

@@ -48,17 +48,7 @@ namespace PokeCounter
 
         void ProcessRequest(DownloadRequest downloadRequest)
         {
-            string extension = "";
-            if (downloadRequest.imageURL != null)
-                extension = System.IO.Path.GetExtension(downloadRequest.imageURL);
-            string relativeTargetPath = downloadRequest.categoryIdentifier
-            + "_" + downloadRequest.pokemonName + "_" + SpriteCategory.OptionEnumToString(downloadRequest.options) + extension;
-            string targetFile = System.IO.Path.Combine(Paths.ImageCacheDirectory, relativeTargetPath);
-
-            if (downloadRequest.imageURL != null)
-            {
-                DownloadManager.DownloadImage(downloadRequest.imageURL, targetFile);
-            }
+            string targetFile = DownloadManager.DownloadPokemonImage(downloadRequest.imageURL);
 
             if (!File.Exists(targetFile) || downloadRequest.imageURL == null)
             {
@@ -69,7 +59,6 @@ namespace PokeCounter
             try
             {
                 imagePath = targetFile;
-                relativeImagePath = relativeTargetPath;
                 imageURL = downloadRequest.imageURL;
 
                 FileInfo finfo = new FileInfo(imagePath);
@@ -106,6 +95,12 @@ namespace PokeCounter
             {
                 MessageBox.Show($"Failed to download data for pokemon {pokemonDatas[PokemonDropdown.SelectedIndex].name}!\n{exception.Message}");
             }
+        }
+
+        public static string GetIconURLFromPokemon(PokemonInfo pokemonInfo)
+        {
+            Pokemon pokemon = DownloadManager.DownloadObject<Pokemon>(pokemonInfo.url);
+            return pokemon.Sprites.versions.generation5.blackWhite.animated.frontDefault;
         }
 
         private void InitializeCategoryListFromPokemon(Pokemon pokemon)
@@ -329,7 +324,7 @@ namespace PokeCounter
         public Pokemon currentPokemon;
         public string targetResolution;
         public string relativeDirectory;
-        public string relativeImagePath, imageURL;
+        public string imageURL;
         bool init = false;
 
         void UpdateImage()

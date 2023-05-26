@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -182,7 +183,7 @@ namespace PokeCounter
                 currentProfile.SetIsDirty(true);
             }
 
-            if (!(startupArguments.xPosition.Equals(double.NaN) || !startupArguments.yPosition.Equals(double.NaN)))
+            if (!(startupArguments.xPosition.Equals(double.NaN) || startupArguments.yPosition.Equals(double.NaN)))
             {
                 Left = startupArguments.xPosition;
                 Top = startupArguments.yPosition;
@@ -382,6 +383,52 @@ namespace PokeCounter
                 var mi = new MenuItem();
                 mi.Header = profile;
                 mi.Click += RecentProfile_Click;
+                CounterProfile profileObject = JsonConvert.DeserializeObject<CounterProfile>(File.ReadAllText(profile));
+
+                string iconPath = "";
+
+                if (profileObject.cachedPokemonIndex != -1)
+                {
+                    if (metaSettings.data.pokemonDatas.pokemon.Count > profileObject.cachedPokemonIndex)
+                    {
+                        var pokemonInfo = metaSettings.data.pokemonDatas.pokemon[profileObject.cachedPokemonIndex];
+                        string iconUrl = SelectPokemonPopup.GetIconURLFromPokemon(pokemonInfo);
+                        if (iconUrl != null)
+                        {
+                            iconPath = DownloadManager.DownloadPokemonImage(iconUrl);
+                        }
+                    }
+                }
+                else if (File.Exists(profileObject.backgroundImagePath))
+                {
+                    iconPath = profileObject.backgroundImagePath;
+                }
+
+                if (File.Exists(iconPath))
+                {
+                    BitmapImage bmp = new BitmapImage(new Uri(iconPath));
+                    
+                    Image image = new Image();
+
+                    FileInfo finfo = new FileInfo(iconPath);
+
+                    if (finfo.Extension == ".gif")
+                    {
+                        ImageBehavior.SetAnimatedSource(image, bmp);
+                        image.Source = null;
+                    }
+                    else
+                    {
+                        ImageBehavior.SetAnimatedSource(image, null);
+                        image.Source = bmp;
+                    }
+
+                    image.Stretch = Stretch.Uniform;
+                    RenderOptions.SetBitmapScalingMode(image, BitmapScalingMode.HighQuality);
+
+                    mi.Icon = image;
+                }
+
                 RecentProfilesOption.Items.Add(mi);
             }
             SelectPokemonOption.IsEnabled = DownloadManager.IsOnline();
@@ -694,7 +741,7 @@ namespace PokeCounter
             public LayoutData layout;
         }
 
-        struct LayoutData
+        public struct LayoutData
         {
             static double ColliderSize = 40, CornerSize = 20;
             public double WindowWidth, WindowHeight, WindowLeft, WindowTop;
@@ -758,7 +805,7 @@ namespace PokeCounter
         }
 
         [Flags]
-        enum EdgeHighlight
+        public enum EdgeHighlight
         {
             Top = 1,
             Left = 2,
@@ -997,10 +1044,11 @@ namespace PokeCounter
             SetShowOdds(profile.showOdds, true);
             SetFiltering(profile.bitmapScalingMode);
 
-            if (profile.cachedImageURL != null && profile.cachedRelativeFileLocation != null)
-                if (!File.Exists(profile.backgroundImagePath) && profile.cachedImageURL.Length > 0 && profile.cachedRelativeFileLocation.Length > 0)
+            if (profile.cachedImageURL != null)
+                if (!File.Exists(profile.backgroundImagePath) && profile.cachedImageURL.Length > 0)
                 {
-                    DownloadManager.DownloadImage(profile.cachedImageURL, profile.backgroundImagePath);
+                    profile.backgroundImagePath = DownloadManager.DownloadPokemonImage(profile.cachedImageURL);
+                    if (profile.path != null) profile.Save();
                 }
 
             if (File.Exists(profile.backgroundImagePath))
@@ -1220,7 +1268,6 @@ namespace PokeCounter
                 currentProfile.cachedPokemonOptions = popup.cachedOptions;
                 currentProfile.cachedPokemonIndex = popup.cachedPokemon;
                 currentProfile.cachedImageURL = popup.imageURL;
-                currentProfile.cachedRelativeFileLocation = popup.relativeImagePath;
 
                 LoadImageFromFile(popup.imagePath);
                 RefreshAll();
@@ -1467,16 +1514,21 @@ namespace PokeCounter
         public static int GetNextAvailableGroupIndex(RemoteControlManager optionalRCM = null)
         {
             if (optionalRCM == null) optionalRCM = new RemoteControlManager();
-            int highestCurrentGroup = -1;
+            HashSet<int> occupiedGroups = new HashSet<int>();
             foreach (var window in optionalRCM.otherWindows)
             {
                 int group = optionalRCM.SendMessage(window, Message.GetGroup).ToInt32();
-                if (group > highestCurrentGroup)
-                {
-                    highestCurrentGroup = group;
-                }
+                occupiedGroups.Add(group);
             }
-            return highestCurrentGroup + 1;
+
+            int nextAvailableGroup = 0;
+
+            while (occupiedGroups.Contains(nextAvailableGroup))
+            {
+                nextAvailableGroup++;
+            }
+
+            return nextAvailableGroup;
         }
 
         #endregion
@@ -1553,6 +1605,7 @@ namespace PokeCounter
 
                     if (result != System.Windows.Forms.DialogResult.OK) return;
 
+                    List<LayoutData> profileLayouts = new List<LayoutData>();
                     File.WriteAllText(CommonGroupFile, "");
                     int nextAvailableGroup = GetNextAvailableGroupIndex();
                     foreach (var window in rcm.AllWindows)
@@ -1561,10 +1614,33 @@ namespace PokeCounter
                         {
                             rcm.SendMessage(window, Message.WriteProfilePathToGroupFile);
                             rcm.SendMessage(window, Message.SetGroup, nextAvailableGroup);
+                            profileLayouts.Add(rcm.Query<LayoutData>(window, Query.LayoutData));
                         }
                     }
 
-                    File.Copy(CommonGroupFile, saveFileDialog.FileName, true);
+                    string[] profilePaths = File.ReadAllLines(CommonGroupFile);
+
+                    CounterGroup counterGroup = new CounterGroup();
+
+                    MessageBoxResult saveResult = MessageBoxResult.Yes;
+
+                    if (profileLayouts.Count != profilePaths.Length)
+                    {
+                        saveResult = System.Windows.MessageBox.Show("Failed to save counter file! There was a problem gathering the profile information. Do you want to try to make a profile group anyway?", "Oops!", MessageBoxButton.YesNo, MessageBoxImage.Warning); ;
+                    }
+
+                    if (saveResult != MessageBoxResult.Yes) return;
+
+                    for (int i = 0; i < profilePaths.Length && i < profileLayouts.Count; i++)
+                    {
+                        counterGroup.counters.Add(new CounterGroup.CounterInfo()
+                        {
+                            profilePath = profilePaths[i],
+                            layout = profileLayouts[i]
+                        });
+                    }
+
+                    File.WriteAllText(saveFileDialog.FileName, JsonConvert.SerializeObject(counterGroup));
                 }
             };
         }
@@ -1671,7 +1747,6 @@ namespace PokeCounter
             if (!File.Exists(openFileDialog.FileName)) return;
 
             currentProfile.cachedImageURL = "";
-            currentProfile.cachedRelativeFileLocation = "";
 
             LoadImageFromFile(openFileDialog.FileName);
             PushChange();
@@ -2112,6 +2187,14 @@ namespace PokeCounter
             System.Windows.MessageBox.Show(".counter and .counterGroup files will now open with this executable", "Success!");
         }
 
+        private void LeaveFeedbackOption_Click(object sender, RoutedEventArgs e)
+        {
+            var sInfo = new System.Diagnostics.ProcessStartInfo("https://github.com/totalaj/poke-counter/issues")
+            {
+                UseShellExecute = true,
+            };
+            System.Diagnostics.Process.Start(sInfo);
+        }
 
         public static bool IsAdministrator =>
              new WindowsPrincipal(WindowsIdentity.GetCurrent())
