@@ -22,9 +22,10 @@ namespace PokeCounter
         public delegate void Finished(bool success);
         RemoteControlManager rcm;
         MainWindow owningWindow;
-        public CreateGroupPopup(int groupIndex, MainWindow owningWindow, RemoteControlManager rcm)
+        public CreateGroupPopup(string title, int groupIndex, MainWindow owningWindow, RemoteControlManager rcm)
         {
             InitializeComponent();
+            Title = title;
             this.owningWindow = owningWindow;
             this.rcm = rcm;
 
@@ -57,6 +58,10 @@ namespace PokeCounter
             }
 
             success = groupCount > 1;
+            if (!success)
+            {
+                MessageBox.Show("Unable to create a group smaller than 2!");
+            }
             Close();
         }
 

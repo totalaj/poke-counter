@@ -376,6 +376,7 @@ namespace PokeCounter
             CurrentFileNameLabel.Header = System.IO.Path.GetFileName(currentProfile.path) + (dirty ? "*" : "");
 
             UngroupOption.Visibility = groupMode ? Visibility.Visible : Visibility.Collapsed;
+            MakeGroupOption.IsEnabled = !groupMode;
 
             foreach (var profile in metaSettings.data.recentProfiles.Reverse())
             {
@@ -407,7 +408,7 @@ namespace PokeCounter
                 if (File.Exists(iconPath))
                 {
                     BitmapImage bmp = new BitmapImage(new Uri(iconPath));
-                    
+
                     Image image = new Image();
 
                     FileInfo finfo = new FileInfo(iconPath);
@@ -1286,6 +1287,169 @@ namespace PokeCounter
             Process.Start(Paths.Executable, "\"" + currentProfile.path + "\" -n -skipReload");
         }
 
+        // Group
+        private void GroupCommand_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = true;
+        }
+
+        private void GroupCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (groupMode)
+            {
+                SetGroup(-1);
+                groupShutdown = false;
+            }
+            else
+            {
+                MakeGroup();
+            }
+        }
+
+        private void SaveGroupCommand_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = true;
+        }
+
+        private void SaveGroupCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (createGroupPopup?.IsLoaded == true) return;
+
+            createGroupPopup = new CreateGroupPopup("Create group file", groupIndex, this, rcm);
+            createGroupPopup.Show();
+
+            createGroupPopup.onFinished += (success) =>
+            {
+                if (success)
+                {
+                    SaveFileDialog saveFileDialog = new SaveFileDialog();
+                    saveFileDialog.DefaultExt = CounterProfile.GroupFileExtension;
+                    saveFileDialog.Filter = $"Counter group file (*{CounterProfile.GroupFileExtension})|*{CounterProfile.GroupFileExtension}";
+                    saveFileDialog.AddExtension = true;
+                    saveFileDialog.Title = "Save Counter Group";
+                    if (currentProfile.path != null)
+                        saveFileDialog.InitialDirectory = System.IO.Path.GetDirectoryName(currentProfile.path);
+                    else
+                        saveFileDialog.InitialDirectory = Paths.ExecutableDirectory;
+
+                    var result = saveFileDialog.ShowDialog();
+
+                    if (result != System.Windows.Forms.DialogResult.OK) return;
+
+                    List<LayoutData> profileLayouts = new List<LayoutData>();
+                    File.WriteAllText(CommonGroupFile, "");
+                    int nextAvailableGroup = GetNextAvailableGroupIndex();
+                    foreach (var window in rcm.AllWindows)
+                    {
+                        if (rcm.SendMessage(window, Message.GetEligibleForGroup).ToInt32() == 1)
+                        {
+                            rcm.SendMessage(window, Message.WriteProfilePathToGroupFile);
+                            rcm.SendMessage(window, Message.SetGroup, nextAvailableGroup);
+                            profileLayouts.Add(rcm.Query<LayoutData>(window, Query.LayoutData));
+                        }
+                    }
+
+                    string[] profilePaths = File.ReadAllLines(CommonGroupFile);
+
+                    CounterGroup counterGroup = new CounterGroup();
+
+                    MessageBoxResult saveResult = MessageBoxResult.Yes;
+
+                    if (profileLayouts.Count != profilePaths.Length)
+                    {
+                        saveResult = System.Windows.MessageBox.Show("Failed to save counter file! There was a problem gathering the profile information. Do you want to try to make a profile group anyway?", "Oops!", MessageBoxButton.YesNo, MessageBoxImage.Warning); ;
+                    }
+
+                    if (saveResult != MessageBoxResult.Yes) return;
+
+                    for (int i = 0; i < profilePaths.Length && i < profileLayouts.Count; i++)
+                    {
+                        counterGroup.counters.Add(new CounterGroup.CounterInfo()
+                        {
+                            profilePath = profilePaths[i],
+                            layout = profileLayouts[i]
+                        });
+                    }
+
+                    File.WriteAllText(saveFileDialog.FileName, JsonConvert.SerializeObject(counterGroup));
+                }
+            };
+        }
+
+        // Show Odds
+        private void ShowOddsCommand_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = true;
+        }
+
+        private void ShowOddsCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            SetShowOdds(!currentProfile.showOdds);
+            PushChange();
+        }
+
+        void SetShowOdds(bool showOdds, bool updateCheckmark = false)
+        {
+            currentProfile.showOdds = showOdds;
+            OddsText.Visibility = showOdds ? Visibility.Visible : Visibility.Collapsed;
+            OddsTextMotivation.Visibility = showOdds ? Visibility.Visible : Visibility.Collapsed;
+            OddsTextMotivationBox.Visibility = showOdds ? Visibility.Visible : Visibility.Collapsed;
+
+            SetTargetOddsOption.IsEnabled = showOdds;
+
+            if (updateCheckmark)
+            {
+                ShowOdds.IsChecked = showOdds;
+            }
+            RefreshAll();
+        }
+
+
+        // Lock Size
+        private void LockSizeCommand_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = true;
+        }
+
+        private void LockSizeCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            SetSizeLocked(!currentProfile.sizeLocked);
+            PushChange();
+        }
+
+        void SetSizeLocked(bool aLockedSize, bool updateCheckmark = false)
+        {
+            currentProfile.sizeLocked = aLockedSize;
+
+            if (updateCheckmark)
+            {
+                LockSizeOption.IsChecked = aLockedSize;
+            }
+        }
+
+        // Always On Top
+        private void AlwaysOnTopCommand_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = true;
+        }
+
+        private void AlwaysOnTopCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            SetAlwaysOnTopOption(!metaSettings.data.topmost);
+            PushChange();
+        }
+
+        void SetAlwaysOnTopOption(bool alwaysOnTop, bool updateCheckmark = false)
+        {
+            metaSettings.data.topmost = alwaysOnTop;
+            CounterWindow.Topmost = alwaysOnTop;
+
+            if (updateCheckmark)
+            {
+                AlwaysOnTopOption.IsChecked = alwaysOnTop;
+            }
+        }
+
         #endregion
 
         #region Hotkeys
@@ -1553,20 +1717,6 @@ namespace PokeCounter
 
         #endregion
 
-        #region Option Functions
-
-        void SetSizeLocked(bool aLockedSize, bool updateCheckmark = false)
-        {
-            currentProfile.sizeLocked = aLockedSize;
-
-            if (updateCheckmark)
-            {
-                LockSizeOption.IsChecked = aLockedSize;
-            }
-        }
-
-        #endregion
-
         #region Context Menu
 
         #region Groups
@@ -1580,76 +1730,16 @@ namespace PokeCounter
 
         CreateGroupPopup createGroupPopup;
 
-        private void SaveGroupFileOption_Clicked(object sender, RoutedEventArgs e)
-        {
-            if (createGroupPopup?.IsLoaded == true) return;
-
-            createGroupPopup = new CreateGroupPopup(groupIndex, this, rcm);
-            createGroupPopup.Show();
-
-            createGroupPopup.onFinished += (success) =>
-            {
-                if (success)
-                {
-                    SaveFileDialog saveFileDialog = new SaveFileDialog();
-                    saveFileDialog.DefaultExt = CounterProfile.GroupFileExtension;
-                    saveFileDialog.Filter = $"Counter group file (*{CounterProfile.GroupFileExtension})|*{CounterProfile.GroupFileExtension}";
-                    saveFileDialog.AddExtension = true;
-                    saveFileDialog.Title = "Save Counter Group";
-                    if (currentProfile.path != null)
-                        saveFileDialog.InitialDirectory = System.IO.Path.GetDirectoryName(currentProfile.path);
-                    else
-                        saveFileDialog.InitialDirectory = Paths.ExecutableDirectory;
-
-                    var result = saveFileDialog.ShowDialog();
-
-                    if (result != System.Windows.Forms.DialogResult.OK) return;
-
-                    List<LayoutData> profileLayouts = new List<LayoutData>();
-                    File.WriteAllText(CommonGroupFile, "");
-                    int nextAvailableGroup = GetNextAvailableGroupIndex();
-                    foreach (var window in rcm.AllWindows)
-                    {
-                        if (rcm.SendMessage(window, Message.GetEligibleForGroup).ToInt32() == 1)
-                        {
-                            rcm.SendMessage(window, Message.WriteProfilePathToGroupFile);
-                            rcm.SendMessage(window, Message.SetGroup, nextAvailableGroup);
-                            profileLayouts.Add(rcm.Query<LayoutData>(window, Query.LayoutData));
-                        }
-                    }
-
-                    string[] profilePaths = File.ReadAllLines(CommonGroupFile);
-
-                    CounterGroup counterGroup = new CounterGroup();
-
-                    MessageBoxResult saveResult = MessageBoxResult.Yes;
-
-                    if (profileLayouts.Count != profilePaths.Length)
-                    {
-                        saveResult = System.Windows.MessageBox.Show("Failed to save counter file! There was a problem gathering the profile information. Do you want to try to make a profile group anyway?", "Oops!", MessageBoxButton.YesNo, MessageBoxImage.Warning); ;
-                    }
-
-                    if (saveResult != MessageBoxResult.Yes) return;
-
-                    for (int i = 0; i < profilePaths.Length && i < profileLayouts.Count; i++)
-                    {
-                        counterGroup.counters.Add(new CounterGroup.CounterInfo()
-                        {
-                            profilePath = profilePaths[i],
-                            layout = profileLayouts[i]
-                        });
-                    }
-
-                    File.WriteAllText(saveFileDialog.FileName, JsonConvert.SerializeObject(counterGroup));
-                }
-            };
-        }
-
         private void MakeGroupOption_Clicked(object sender, RoutedEventArgs e)
         {
+            MakeGroup();
+        }
+
+        void MakeGroup()
+        {
             if (createGroupPopup?.IsLoaded == true) return;
 
-            createGroupPopup = new CreateGroupPopup(groupIndex, this, rcm);
+            createGroupPopup = new CreateGroupPopup("Create a group", groupIndex, this, rcm);
             createGroupPopup.Show();
 
             createGroupPopup.onFinished += (success) =>
@@ -2027,39 +2117,6 @@ namespace PokeCounter
 
         #region Odds
 
-        void SetShowOdds(bool showOdds, bool updateCheckmark = false)
-        {
-            currentProfile.showOdds = showOdds;
-            OddsText.Visibility = showOdds ? Visibility.Visible : Visibility.Collapsed;
-            OddsTextMotivation.Visibility = showOdds ? Visibility.Visible : Visibility.Collapsed;
-            OddsTextMotivationBox.Visibility = showOdds ? Visibility.Visible : Visibility.Collapsed;
-
-            SetTargetOddsOption.IsEnabled = showOdds;
-
-            if (updateCheckmark)
-            {
-                ShowOdds.IsChecked = showOdds;
-            }
-            RefreshAll();
-        }
-
-        private void ShowOddsOption_Checked(object sender, RoutedEventArgs e)
-        {
-            if (!IsInitialized) return;
-            SetShowOdds(true);
-        }
-
-        private void ShowOddsOption_Unchecked(object sender, RoutedEventArgs e)
-        {
-            if (!IsInitialized) return;
-            SetShowOdds(false);
-        }
-
-        private void ShowOddsOption_Click(object sender, RoutedEventArgs e)
-        {
-            PushChange();
-        }
-
         private void SetTargetOddsDirectOption_Click(object sender, RoutedEventArgs e)
         {
             var mi = (e.Source as MenuItem);
@@ -2131,35 +2188,6 @@ namespace PokeCounter
 
         #region Other
 
-        // Always on top (topmost)
-        private void AlwaysOnTopOption_Unchecked(object sender, RoutedEventArgs e)
-        {
-            if (!IsInitialized) return;
-            SetAlwaysOnTopOption(false);
-        }
-
-        private void AlwaysOnTopOption_Checked(object sender, RoutedEventArgs e)
-        {
-            if (!IsInitialized) return;
-            SetAlwaysOnTopOption(true);
-        }
-
-        private void AlwaysOnTopOption_Click(object sender, RoutedEventArgs e)
-        {
-            PushChange();
-        }
-
-        void SetAlwaysOnTopOption(bool alwaysOnTop, bool updateCheckmark = false)
-        {
-            metaSettings.data.topmost = alwaysOnTop;
-            CounterWindow.Topmost = alwaysOnTop;
-
-            if (updateCheckmark)
-            {
-                AlwaysOnTopOption.IsChecked = alwaysOnTop;
-            }
-        }
-
         // Recent profiles
         private void RecentProfile_Click(object sender, RoutedEventArgs e)
         {
@@ -2200,7 +2228,6 @@ namespace PokeCounter
              new WindowsPrincipal(WindowsIdentity.GetCurrent())
                  .IsInRole(WindowsBuiltInRole.Administrator);
 
-
         static void EnsureFileAssociation()
         {
             FileAssociations.EnsureAssociationsSet(new FileAssociation
@@ -2221,7 +2248,6 @@ namespace PokeCounter
             }
             );
         }
-
 
         // Refresh data
         private void GetNewPokemonData_Click(object sender, RoutedEventArgs e)

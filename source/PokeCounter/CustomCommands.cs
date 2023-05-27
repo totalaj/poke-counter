@@ -107,5 +107,59 @@ namespace PokeCounter.Commands
         }
     );
 
+        public static readonly RoutedUICommand Group = new RoutedUICommand
+    (
+        "Group",
+        "Group",
+        typeof(CustomCommands),
+        new InputGestureCollection()
+        {
+            new KeyGesture(Key.G, ModifierKeys.Control)
+        }
+    );
+        public static readonly RoutedUICommand SaveGroup = new RoutedUICommand
+    (
+        "Save Group",
+        "Save Group",
+        typeof(CustomCommands),
+        new InputGestureCollection()
+        {
+            new KeyGesture(Key.G, ModifierKeys.Control | ModifierKeys.Shift)
+        }
+    );
+
+        public static readonly RoutedUICommand ShowOdds = new RoutedUICommand
+    (
+        "Show Odds",
+        "Show Odds",
+        typeof(CustomCommands),
+        new InputGestureCollection()
+        {
+            new KeyGesture(Key.O, ModifierKeys.Alt)
+        }
+    );
+
+        public static readonly RoutedUICommand LockSize = new RoutedUICommand
+    (
+        "Lock Size",
+        "Lock Size",
+        typeof(CustomCommands),
+        new InputGestureCollection()
+        {
+            new KeyGesture(Key.L, ModifierKeys.Alt)
+        }
+    );
+
+        public static readonly RoutedUICommand AlwaysOnTop = new RoutedUICommand
+    (
+        "Always on top",
+        "Always on top",
+        typeof(CustomCommands),
+        new InputGestureCollection()
+        {
+            new KeyGesture(Key.T, ModifierKeys.Alt)
+        }
+    );
+
     }
 }
