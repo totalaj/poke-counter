@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Windows;
 using System.Windows.Forms;
+using System.Windows.Input;
 using System.Windows.Media;
 
 namespace PokeCounter
@@ -18,14 +19,21 @@ namespace PokeCounter
 
     public struct GlobalHotkey
     {
-        public GlobalHotkey(Keys keys, HotkeyModifierKeys modifierKeys)
+        public GlobalHotkey(Keys keys, ModifierKeys modifierKeys)
         {
             this.keys = keys;
             this.modifierKeys = modifierKeys;
         }
 
+        public override string ToString()
+        {
+            string keyCombo = keys.ToString();
+            if (modifierKeys != 0) keyCombo = (modifierKeys.ToString() + "+") + keyCombo;
+            return keyCombo;
+        }
+
         public Keys keys;
-        public HotkeyModifierKeys modifierKeys;
+        public ModifierKeys modifierKeys;
     }
 
     class CounterProfile : IUndoObject<CounterProfile>, IDirtyable
@@ -56,6 +64,9 @@ namespace PokeCounter
             uniqueIdentifier = "official"
         };
         public string cachedImageURL = "";
+
+        public GlobalHotkey incrementHotkey = new GlobalHotkey(Keys.Add, 0);
+        public GlobalHotkey decrementHotkey = new GlobalHotkey(Keys.Subtract, 0);
 
         [JsonIgnore]
         private bool isDirty;

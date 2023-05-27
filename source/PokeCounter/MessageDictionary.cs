@@ -61,7 +61,8 @@ namespace PokeCounter
         /// <summary>
         /// wParam = 0 is always close normally. 1 is close forcefully
         /// </summary>
-        Close
+        Close,
+
     }
     /// <summary>
     /// Sends a struct immediately, is read by the reciever, and is disposed
@@ -85,5 +86,13 @@ namespace PokeCounter
     public enum Query
     {
         LayoutData = 0x400 + 2000,
+        /// <summary>
+        /// GlobalHotkey struct
+        /// </summary>
+        GetIncrementKey,
+        /// <summary>
+        /// GlobalHotkey struct
+        /// </summary>
+        GetDecrementKey,
     }
 }

@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Windows.Input;
 
 namespace PokeCounter
 {
@@ -43,7 +44,7 @@ namespace PokeCounter
                 {
                     // get the keys.
                     Keys key = (Keys)(((int)m.LParam >> 16) & 0xFFFF);
-                    HotkeyModifierKeys modifier = (HotkeyModifierKeys)((int)m.LParam & 0xFFFF);
+                    ModifierKeys modifier = (ModifierKeys)((int)m.LParam & 0xFFFF);
 
                     // invoke the event to notify the parent.
                     KeyPressed?.Invoke(this, new KeyPressedEventArgs(modifier, key));
@@ -79,7 +80,7 @@ namespace PokeCounter
         /// </summary>
         /// <param name="modifier">The modifiers that are associated with the hot key.</param>
         /// <param name="key">The key itself that is associated with the hot key.</param>
-        public bool RegisterHotKey(HotkeyModifierKeys modifier, Keys key)
+        public bool RegisterHotKey(ModifierKeys modifier, Keys key)
         {
             // increment the counter.
             _currentId = _currentId + 1;
@@ -141,16 +142,16 @@ namespace PokeCounter
     /// </summary>
     public class KeyPressedEventArgs : EventArgs
     {
-        private HotkeyModifierKeys _modifier;
+        private ModifierKeys _modifier;
         private Keys _key;
 
-        internal KeyPressedEventArgs(HotkeyModifierKeys modifier, Keys key)
+        internal KeyPressedEventArgs(ModifierKeys modifier, Keys key)
         {
             _modifier = modifier;
             _key = key;
         }
 
-        public HotkeyModifierKeys Modifier
+        public ModifierKeys Modifier
         {
             get { return _modifier; }
         }
@@ -164,12 +165,12 @@ namespace PokeCounter
     /// <summary>
     /// The enumeration of possible modifiers.
     /// </summary>
-    [Flags]
-    public enum HotkeyModifierKeys : uint
-    {
-        Alt = 1,
-        Control = 2,
-        Shift = 4,
-        Win = 8
-    }
+    //[Flags]
+    //public enum ModifierKeys : uint
+    //{
+    //    Alt = 1,
+    //    Control = 2,
+    //    Shift = 4,
+    //    Win = 8
+    //}
 }

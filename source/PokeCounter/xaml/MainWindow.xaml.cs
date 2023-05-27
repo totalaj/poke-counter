@@ -26,8 +26,6 @@ namespace PokeCounter
         public string lastProfilePath = "";
         public HashSet<string> recentProfiles = new HashSet<string>();
         public PokemonInfoList pokemonDatas = null;
-        public GlobalHotkey incrementHotkey = new GlobalHotkey(Keys.Add, 0);
-        public GlobalHotkey decrementHotkey = new GlobalHotkey(Keys.Subtract, 0);
         public bool topmost = true;
         public bool autosave = true;
         public bool Verify()
@@ -725,6 +723,18 @@ namespace PokeCounter
                         rcm.PostQueryData(GetLayout());
                         break;
                     }
+                case Query.GetIncrementKey:
+                    {
+                        handled = true;
+                        rcm.PostQueryData(currentProfile.incrementHotkey);
+                        break;
+                    }
+                case Query.GetDecrementKey:
+                    {
+                        handled = true;
+                        rcm.PostQueryData(currentProfile.decrementHotkey);
+                        break;
+                    }
                 default:
                     break;
             }
@@ -1075,8 +1085,8 @@ namespace PokeCounter
             BackgroundImage.Width = profile.imageWidth;
             BackgroundImage.Height = profile.imageHeight;
 
-            TryRegisterHotkey(ref incrementHook, metaSettings.data.incrementHotkey, IncrementHook_KeyPressed);
-            TryRegisterHotkey(ref decrementHook, metaSettings.data.decrementHotkey, DecrementHook_KeyPressed);
+            TryRegisterHotkey(ref incrementHook, currentProfile.incrementHotkey, IncrementHook_KeyPressed);
+            TryRegisterHotkey(ref decrementHook, currentProfile.decrementHotkey, DecrementHook_KeyPressed);
 
             if (profile.path != null)
             {
@@ -1478,33 +1488,48 @@ namespace PokeCounter
             IncrementCounter(-currentProfile.incrementAmount);
         }
 
+        List<GlobalHotkey> OccupiedKeys
+        {
+            get
+            {
+                List<GlobalHotkey> keys = new List<GlobalHotkey>();
+
+                foreach (var window in rcm.AllWindows)
+                {
+                    keys.Add(rcm.Query<GlobalHotkey>(window, Query.GetIncrementKey));
+                    keys.Add(rcm.Query<GlobalHotkey>(window, Query.GetIncrementKey));
+                }
+
+                return keys;
+            }
+        }
 
         private void BindGlobalIncrementKey_Click(object sender, RoutedEventArgs e)
         {
             incrementHook.KeyPressed -= IncrementHook_KeyPressed;
             incrementHook.Dispose();
-            PressAnyButtonPopup popup = new PressAnyButtonPopup("global increment key");
-            popup.value = metaSettings.data.incrementHotkey.keys;
+            PressAnyButtonPopup popup = new PressAnyButtonPopup("global increment key", OccupiedKeys);
+            popup.occupiedKeys.Remove(currentProfile.incrementHotkey);
 
             if (popup.ShowDialog().GetValueOrDefault(false))
             {
-                metaSettings.data.incrementHotkey.keys = popup.value;
+                currentProfile.incrementHotkey = popup.value;
             }
-            TryRegisterHotkey(ref incrementHook, metaSettings.data.incrementHotkey, IncrementHook_KeyPressed);
+            TryRegisterHotkey(ref incrementHook, currentProfile.incrementHotkey, IncrementHook_KeyPressed);
         }
 
         private void BindGlobalDecrementKey_Click(object sender, RoutedEventArgs e)
         {
             decrementHook.KeyPressed -= DecrementHook_KeyPressed;
             decrementHook.Dispose();
-            PressAnyButtonPopup popup = new PressAnyButtonPopup("global decrement key");
-            popup.value = metaSettings.data.decrementHotkey.keys;
+            PressAnyButtonPopup popup = new PressAnyButtonPopup("global decrement key", OccupiedKeys);
+            popup.occupiedKeys.Remove(currentProfile.decrementHotkey);
 
             if (popup.ShowDialog().GetValueOrDefault(false))
             {
-                metaSettings.data.decrementHotkey.keys = popup.value;
+                currentProfile.decrementHotkey = popup.value;
             }
-            TryRegisterHotkey(ref decrementHook, metaSettings.data.decrementHotkey, DecrementHook_KeyPressed);
+            TryRegisterHotkey(ref decrementHook, currentProfile.decrementHotkey, DecrementHook_KeyPressed);
         }
 
 

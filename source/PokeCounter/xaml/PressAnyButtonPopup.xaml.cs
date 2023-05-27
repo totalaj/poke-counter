@@ -20,16 +20,19 @@ namespace PokeCounter
     /// </summary>
     public partial class PressAnyButtonPopup : Window
     {
-        readonly Func<Keys, bool> validator;
+        public List<GlobalHotkey> occupiedKeys;
         bool init = false;
-        public PressAnyButtonPopup(string valueName, Func<Keys, bool> validator = null)
+        public PressAnyButtonPopup(string valueName, List<GlobalHotkey> occupiedKeys)
         {
             InitializeComponent();
-            this.validator = validator;
+            this.occupiedKeys = occupiedKeys;
             PopupWindow.Title = "Set " + valueName;
+            SetAcceptingInput(true);
+            InvalidText.Visibility = Visibility.Collapsed;
         }
 
-        public Keys value;
+        public GlobalHotkey value;
+        public bool acceptingInput, validInput;
 
         public void Complete()
         {
@@ -56,25 +59,52 @@ namespace PokeCounter
             }
         }
 
+        List<Keys> disallowedKeys = new List<Keys>()
+        {
+            Keys.ShiftKey, Keys.LShiftKey, Keys.RShiftKey,
+            Keys.Control, Keys.ControlKey, Keys.LControlKey, Keys.RControlKey,
+            Keys.Alt,
+            Keys.RWin, Keys.LWin
+        };
+
         private void PopupWindow_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
+            if (!acceptingInput) return;
+            e.Handled = true;
             var key = (Keys)KeyInterop.VirtualKeyFromKey(e.Key);
 
-            if (validator != null)
-            {
-                if (validator(key)) value = key;
-            }
-            else
-            {
-                value = key;
-            }
+            if (disallowedKeys.Contains(key)) key = Keys.None;
 
+            var hotkey = new GlobalHotkey(key, e.KeyboardDevice.Modifiers);
+
+            validInput = !occupiedKeys.Contains(hotkey);
+
+            InvalidText.Visibility = validInput ? Visibility.Collapsed : Visibility.Visible;
+
+            value = hotkey;
             UpdateKeyText();
         }
 
         private void PopupWindow_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.MiddleButton == MouseButtonState.Pressed) Close();
+            if (e.LeftButton == MouseButtonState.Pressed) SetAcceptingInput(true);
+        }
+
+        private void PopupWindow_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            SetAcceptingInput(false);
+        }
+
+        public void SetAcceptingInput(bool acceptingInput)
+        {
+            this.acceptingInput = acceptingInput;
+            KeyText.Background = acceptingInput ? new SolidColorBrush() : new SolidColorBrush(Color.FromRgb(230, 230, 230));
+            ClickLabel.Visibility = acceptingInput ? Visibility.Collapsed : Visibility.Visible;
+            if (acceptingInput)
+            {
+                KeyText.Content = "Press any key...";
+            }
         }
     }
 }
