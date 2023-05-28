@@ -17,13 +17,55 @@ namespace PokeCounter
         public event IsDirtyChanged DirtyChanged;
     }
 
-    public struct GlobalHotkey
+    public struct KeyCombination
     {
-        public GlobalHotkey(Keys keys, ModifierKeys modifierKeys)
+        public static bool operator ==(KeyCombination a, KeyCombination b)
+        {
+            return a.keys == b.keys && a.modifierKeys == b.modifierKeys;
+        }
+
+        public static bool operator !=(KeyCombination a, KeyCombination b)
+        {
+            return a.keys != b.keys || a.modifierKeys != b.modifierKeys;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is KeyCombination)
+            {
+                var kc = (KeyCombination)obj;
+                return kc == this;
+            }
+            return false;
+        }
+
+        public KeyCombination(Key keys, ModifierKeys modifierKeys)
         {
             this.keys = keys;
             this.modifierKeys = modifierKeys;
         }
+
+        public KeyCombination(KeyCombination other)
+        {
+            keys = other.keys;
+            modifierKeys = other.modifierKeys;
+        }
+
+        public KeyCombination(object keyGesture)
+        {
+            if (keyGesture is KeyGesture inputGesture)
+            {
+                keys = inputGesture.Key;
+                modifierKeys = inputGesture.Modifiers;
+            }
+            else
+            {
+                keys = 0; modifierKeys = 0;
+            }
+        }
+
+        [JsonIgnore]
+        public KeyGesture Gesture => new KeyGesture(keys, modifierKeys);
 
         public override string ToString()
         {
@@ -32,7 +74,7 @@ namespace PokeCounter
             return keyCombo;
         }
 
-        public Keys keys;
+        public Key keys;
         public ModifierKeys modifierKeys;
     }
 
@@ -65,8 +107,8 @@ namespace PokeCounter
         };
         public string cachedImageURL = "";
 
-        public GlobalHotkey incrementHotkey = new GlobalHotkey(Keys.Add, 0);
-        public GlobalHotkey decrementHotkey = new GlobalHotkey(Keys.Subtract, 0);
+        public KeyCombination incrementHotkey = new KeyCombination(Key.Add, 0);
+        public KeyCombination decrementHotkey = new KeyCombination(Key.Subtract, 0);
 
         [JsonIgnore]
         private bool isDirty;
@@ -130,7 +172,7 @@ namespace PokeCounter
 
         public bool Save()
         {
-            if (GetIsDirty())
+            if (GetIsDirty() && path != "" && path != null)
             {
                 try
                 {
@@ -138,9 +180,9 @@ namespace PokeCounter
                     SetIsDirty(false);
                     return true;
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
-                    System.Windows.MessageBox.Show($"Could not save file {path}.\n Is it being used by another process?", "Save failed!", MessageBoxButton.OK, MessageBoxImage.Error);
+                    System.Windows.MessageBox.Show($"Could not save file {path}.\n Is it being used by another process?\n{e}", "Save failed!", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             return false;

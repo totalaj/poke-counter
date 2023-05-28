@@ -15,40 +15,138 @@ using System.Windows.Shapes;
 
 namespace PokeCounter
 {
+    public delegate bool KeybindingValidator(KeyCombination keyCombination, out string invalidReason);
+    public class KeybindingWrapper
+    {
+        public delegate void BindingFinished(KeyCombination keyCombination);
+        public delegate void BindingUpdated(KeyCombination oldKeyCombination, KeyCombination newKeyCombination);
+
+        public KeybindingWrapper()
+        {
+
+        }
+        public KeybindingWrapper(string name, KeyCombination value, KeyCombination defaultValue, BindingFinished onFinished, KeybindingValidator validator = null)
+        {
+            this.name = name;
+            this.value = value;
+            this.defaultValue = defaultValue;
+            this.onFinished = onFinished;
+            if (validator != null)
+                validators.Add(validator);
+        }
+
+        public bool IsValid(out string reason)
+        {
+            return IsValid(value, out reason);
+        }
+
+        public bool IsValid(KeyCombination value, out string reason)
+        {
+            foreach (var validator in validators)
+            {
+                if (!validator(value, out reason))
+                {
+                    return false;
+                }
+            }
+            reason = "Valid";
+            return true;
+        }
+
+        public string name;
+        public List<KeybindingValidator> validators = new List<KeybindingValidator>();
+        public BindingFinished onFinished = null;
+        public BindingUpdated onUpdated = null;
+        public KeyCombination value, defaultValue;
+        public bool isSeparator;
+        public void Finish()
+        {
+            if (IsValid(out string ignore) && onFinished != null)
+                onFinished(value);
+        }
+    }
+
     /// <summary>
     /// Interaction logic for PressAnyButtonPopup.xaml
     /// </summary>
     public partial class PressAnyButtonPopup : Window
     {
-        public List<GlobalHotkey> occupiedKeys;
+        List<KeybindingWrapper> keybindingWrappers = new List<KeybindingWrapper>();
+        List<KeybindingInput> keybindingInputs = new List<KeybindingInput>();
+        public List<KeyCombination> occupiedKeys = new List<KeyCombination>();
         bool init = false;
-        public PressAnyButtonPopup(string valueName, List<GlobalHotkey> occupiedKeys)
+        public PressAnyButtonPopup(string windowTitle, List<KeyCombination> aOccupiedKeys, List<object> listEntries)
         {
             InitializeComponent();
-            this.occupiedKeys = occupiedKeys;
-            PopupWindow.Title = "Set " + valueName;
-            SetAcceptingInput(true);
-            InvalidText.Visibility = Visibility.Collapsed;
-        }
+            occupiedKeys.AddRange(aOccupiedKeys);
+            PopupWindow.Title = windowTitle;
 
-        public GlobalHotkey value;
-        public bool acceptingInput, validInput;
+            foreach (var entry in listEntries)
+            {
+                if (entry is KeybindingWrapper keybinding)
+                {
+                    keybinding.validators.Add(
+                        (KeyCombination kc, out string reason) =>
+                        {
+                            foreach (var key in occupiedKeys)
+                            {
+                                if (key == kc && key != keybinding.value)
+                                {
+                                    reason = "Already bound!";
+                                    return false;
+                                }
+                            }
+                            reason = "Valid";
+                            return true;
+                        });
+
+                    KeybindingInput keybindingInput = new KeybindingInput(occupiedKeys, keybinding, this)
+                    {
+                    };
+                    keybindingInput.focused += () =>
+                    {
+                        foreach (var keybinding in keybindingInputs)
+                        {
+                            if (!keybinding.IsFocused) keybinding.SetAcceptingInput(false);
+                        }
+                    };
+                    keybinding.onUpdated += (prev, next) =>
+                    {
+                        occupiedKeys.Remove(prev);
+                        occupiedKeys.Add(next);
+                    };
+                    keybindingWrappers.Add(keybinding);
+                    keybindingInputs.Add(keybindingInput);
+                    KeybindingStack.Children.Add(keybindingInput);
+                }
+                else if (entry is UIElement uiElement)
+                {
+                    KeybindingStack.Children.Add(uiElement);
+                }
+            }
+        }
 
         public void Complete()
         {
             bool result = true;
 
+            foreach (var wrapper in keybindingWrappers)
+            {
+                wrapper.Finish();
+            }
+
             DialogResult = result;
             Close();
         }
+
         private void OKButton_Click(object sender, RoutedEventArgs e)
         {
             Complete();
         }
 
-        void UpdateKeyText()
+        private void PopupWindow_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            KeyText.Content = value.ToString();
+            if (e.MiddleButton == MouseButtonState.Pressed) Close();
         }
 
         private void Window_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -56,54 +154,6 @@ namespace PokeCounter
             if (!init)
             {
                 init = true;
-            }
-        }
-
-        List<Keys> disallowedKeys = new List<Keys>()
-        {
-            Keys.ShiftKey, Keys.LShiftKey, Keys.RShiftKey,
-            Keys.Control, Keys.ControlKey, Keys.LControlKey, Keys.RControlKey,
-            Keys.Alt,
-            Keys.RWin, Keys.LWin
-        };
-
-        private void PopupWindow_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
-        {
-            if (!acceptingInput) return;
-            e.Handled = true;
-            var key = (Keys)KeyInterop.VirtualKeyFromKey(e.Key);
-
-            if (disallowedKeys.Contains(key)) key = Keys.None;
-
-            var hotkey = new GlobalHotkey(key, e.KeyboardDevice.Modifiers);
-
-            validInput = !occupiedKeys.Contains(hotkey);
-
-            InvalidText.Visibility = validInput ? Visibility.Collapsed : Visibility.Visible;
-
-            value = hotkey;
-            UpdateKeyText();
-        }
-
-        private void PopupWindow_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            if (e.MiddleButton == MouseButtonState.Pressed) Close();
-            if (e.LeftButton == MouseButtonState.Pressed) SetAcceptingInput(true);
-        }
-
-        private void PopupWindow_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
-        {
-            SetAcceptingInput(false);
-        }
-
-        public void SetAcceptingInput(bool acceptingInput)
-        {
-            this.acceptingInput = acceptingInput;
-            KeyText.Background = acceptingInput ? new SolidColorBrush() : new SolidColorBrush(Color.FromRgb(230, 230, 230));
-            ClickLabel.Visibility = acceptingInput ? Visibility.Collapsed : Visibility.Visible;
-            if (acceptingInput)
-            {
-                KeyText.Content = "Press any key...";
             }
         }
     }

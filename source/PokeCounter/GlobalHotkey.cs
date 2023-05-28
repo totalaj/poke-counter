@@ -80,7 +80,7 @@ namespace PokeCounter
         /// </summary>
         /// <param name="modifier">The modifiers that are associated with the hot key.</param>
         /// <param name="key">The key itself that is associated with the hot key.</param>
-        public bool RegisterHotKey(ModifierKeys modifier, Keys key)
+        public bool RegisterHotKey(ModifierKeys modifier, Key key)
         {
             // increment the counter.
             _currentId = _currentId + 1;
@@ -90,7 +90,7 @@ namespace PokeCounter
 
             while (registerLoop)
             {
-                result = RegisterHotKey(_window.Handle, _currentId, (uint)modifier, (uint)key);
+                result = RegisterHotKey(_window.Handle, _currentId, (uint)modifier, (uint)KeyInterop.VirtualKeyFromKey(key));
 
                 if (!result)
                 {

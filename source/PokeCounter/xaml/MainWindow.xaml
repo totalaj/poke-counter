@@ -22,6 +22,7 @@
         <CommandBinding Command="cmd:CustomCommands.ShowOdds" CanExecute="ShowOddsCommand_CanExecute" Executed="ShowOddsCommand_Executed"/>
         <CommandBinding Command="cmd:CustomCommands.LockSize" CanExecute="LockSizeCommand_CanExecute" Executed="LockSizeCommand_Executed"/>
         <CommandBinding Command="cmd:CustomCommands.AlwaysOnTop" CanExecute="AlwaysOnTopCommand_CanExecute" Executed="AlwaysOnTopCommand_Executed"/>
+        <CommandBinding Command="cmd:CustomCommands.Resize" CanExecute="ResizeCommand_CanExecute" Executed="ResizeCommand_Executed"/>
     </Window.CommandBindings>
     <Grid>
         <Grid Panel.ZIndex="2">
@@ -323,9 +324,9 @@
                         <Image Source="/icons/fullscreen-exit.png"/>
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Set window size" Click="SetWindowSizeOption_Click">
+                <MenuItem Command="cmd:CustomCommands.Resize" Header="Set window size">
                     <MenuItem.Icon>
-                        <Image Source="/icons/fullscreen.png"/>
+                        <Image Source="/icons/edit.png"/>
                     </MenuItem.Icon>
                 </MenuItem>
                 <MenuItem Command="cmd:CustomCommands.Duplicate">
@@ -341,6 +342,11 @@
                     <Image Source="/icons/settings.png"/>
                 </MenuItem.Icon>
                 <MenuItem Header="Autosave" x:Name="AutosaveOption" StaysOpenOnClick="True" IsCheckable="true" IsChecked="True" Checked="AutosaveOption_Checked" Unchecked="AutosaveOption_Unchecked">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/lightning.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem x:Name="RebindCommandsOption" Header="Rebind Commands" Click="RebindControl_Click">
                     <MenuItem.Icon>
                         <Image Source="/icons/lightning.png"/>
                     </MenuItem.Icon>
@@ -363,16 +369,6 @@
                 <MenuItem Header="Clear cache" Click="ClearCache_Click">
                     <MenuItem.Icon>
                         <Image Source="/icons/bin.png"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-                <MenuItem Header="Bind global increment key" Click="BindGlobalIncrementKey_Click">
-                    <MenuItem.Icon>
-                        <Image Source="/icons/plus.png"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-                <MenuItem Header="Bind global decrement key" Click="BindGlobalDecrementKey_Click">
-                    <MenuItem.Icon>
-                        <Image Source="/icons/minus.png"/>
                     </MenuItem.Icon>
                 </MenuItem>
             </MenuItem>

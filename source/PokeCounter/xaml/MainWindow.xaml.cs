@@ -28,6 +28,8 @@ namespace PokeCounter
         public PokemonInfoList pokemonDatas = null;
         public bool topmost = true;
         public bool autosave = true;
+        public Dictionary<string, KeyCombination> customKeybinds = new Dictionary<string, KeyCombination>();
+
         public bool Verify()
         {
             return recentProfiles.RemoveWhere(s => !File.Exists(s)) > 0;
@@ -94,6 +96,21 @@ namespace PokeCounter
             InitializeComponent();
             Title = WindowTitle;
 
+            var commands = Commands.CustomCommands.GetAllCommandsMapped();
+
+            foreach (var keyValuePair in commands)
+            {
+                List<KeyCombination> keyCombinations = new List<KeyCombination>();
+
+                foreach (var keyCombination in keyValuePair.Value.InputGestures)
+                {
+                    if (keyCombination is KeyGesture kg)
+                        keyCombinations.Add(new KeyCombination(kg.Key, kg.Modifiers));
+                }
+
+                originalKeybindings.Add(keyValuePair.Key, keyCombinations);
+            }
+
             startupArguments = new MainWindowArguments(args);
 
             MinHeight = MinimumHeight;
@@ -111,9 +128,12 @@ namespace PokeCounter
 
             AutosaveOption.IsChecked = metaSettings.data.autosave;
 
-            CounterContextMenu.CommandBindings.AddRange(CounterWindow.CommandBindings);
+            if (startupArguments.forceDefault)
+            {
+                InitializeFromProfile(CounterProfile.CreateDefault(), true);
+            }
 
-            if (File.Exists(startupArguments.startupFile))
+            if (File.Exists(startupArguments.startupFile) && currentProfile == null)
             {
                 OpenFile(startupArguments.startupFile);
             }
@@ -181,7 +201,7 @@ namespace PokeCounter
                 currentProfile.SetIsDirty(true);
             }
 
-            if (!(startupArguments.xPosition.Equals(double.NaN) || startupArguments.yPosition.Equals(double.NaN)))
+            if (startupArguments.xPosition.exists && startupArguments.yPosition.exists)
             {
                 Left = startupArguments.xPosition;
                 Top = startupArguments.yPosition;
@@ -189,6 +209,18 @@ namespace PokeCounter
                 currentProfile.windowLeft = Left;
                 currentProfile.Save();
             }
+
+            var mappedCommands = Commands.CustomCommands.GetAllCommandsMapped();
+            foreach (var keybind in metaSettings.data.customKeybinds)
+            {
+                if (mappedCommands.TryGetValue(keybind.Key, out RoutedUICommand command))
+                {
+                    command.InputGestures.Clear();
+                    command.InputGestures.Add(keybind.Value.Gesture);
+                }
+            }
+
+            KeybindingsUpdated();
         }
 
         public class MainWindowArguments : ArgumentParser
@@ -200,6 +232,7 @@ namespace PokeCounter
             public BoolArgument markAsNew = new BoolArgument("-n");
             public BoolArgument startHidden = new BoolArgument("-h");
             public BoolArgument skipReload = new BoolArgument("-skipReload");
+            public BoolArgument forceDefault = new BoolArgument("-default");
             public DoubleArgument xPosition = new DoubleArgument("-x", double.NaN);
             public DoubleArgument yPosition = new DoubleArgument("-y", double.NaN);
         }
@@ -430,9 +463,11 @@ namespace PokeCounter
 
                 RecentProfilesOption.Items.Add(mi);
             }
+
+            RebindCommandsOption.Items.Clear();
+
             SelectPokemonOption.IsEnabled = DownloadManager.IsOnline();
             RefreshContextMenuTickboxes();
-
         }
 
         private void CounterWindow_DragLeave(object sender, System.Windows.DragEventArgs e)
@@ -497,6 +532,7 @@ namespace PokeCounter
                 GroupTag.Visibility = Visibility.Collapsed;
             }
         }
+
         void UpdateCanResize()
         {
             const double ExtraCheckSize = 10;
@@ -1085,8 +1121,7 @@ namespace PokeCounter
             BackgroundImage.Width = profile.imageWidth;
             BackgroundImage.Height = profile.imageHeight;
 
-            TryRegisterHotkey(ref incrementHook, currentProfile.incrementHotkey, IncrementHook_KeyPressed);
-            TryRegisterHotkey(ref decrementHook, currentProfile.decrementHotkey, DecrementHook_KeyPressed);
+            RegisterHotkeys();
 
             if (profile.path != null)
             {
@@ -1208,14 +1243,7 @@ namespace PokeCounter
 
         private void NewProfileCommand_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            var result = System.Windows.MessageBox.Show("Are you sure you want to discard your current profile and create a new one?", "Wait", MessageBoxButton.YesNo);
-
-            if (result == MessageBoxResult.Yes)
-            {
-                InitializeFromProfile(CounterProfile.CreateDefault());
-                undoList.Clear();
-                SetDirty();
-            }
+            Process.Start(Paths.Executable, "-default -n -skipReload");
         }
 
         // Undo
@@ -1460,11 +1488,51 @@ namespace PokeCounter
             }
         }
 
+        // Set size
+        private void ResizeCommand_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = true;
+        }
+
+        private void ResizeCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            DualValuePopup setSizePopup = new DualValuePopup("Size", "x", "y"
+                , (int i) => { return i >= MinimumWidth; }
+                , (int i) => { return i >= MinimumHeight; });
+            setSizePopup.value1 = (int)Width;
+            setSizePopup.value2 = (int)Height;
+
+            if (setSizePopup.ShowDialog().GetValueOrDefault(false))
+            {
+                Width = setSizePopup.value1;
+                Height = setSizePopup.value2;
+
+                currentProfile.windowWidth = setSizePopup.value1;
+                currentProfile.windowHeight = setSizePopup.value2;
+                PushChange();
+            }
+        }
+
+
         #endregion
 
         #region Hotkeys
 
-        static bool TryRegisterHotkey(ref KeyboardHook refHook, GlobalHotkey hotkey, EventHandler<KeyPressedEventArgs> function)
+        public void RegisterHotkeys()
+        {
+            TryRegisterHotkey(ref incrementHook, currentProfile.incrementHotkey, IncrementHook_KeyPressed);
+            TryRegisterHotkey(ref decrementHook, currentProfile.decrementHotkey, DecrementHook_KeyPressed);
+        }
+
+        public void DeregisterHotkeys()
+        {
+            incrementHook.KeyPressed -= IncrementHook_KeyPressed;
+            incrementHook.Dispose();
+            decrementHook.KeyPressed -= DecrementHook_KeyPressed;
+            decrementHook.Dispose();
+        }
+
+        static bool TryRegisterHotkey(ref KeyboardHook refHook, KeyCombination hotkey, EventHandler<KeyPressedEventArgs> function)
         {
             if (refHook != null)
             {
@@ -1488,50 +1556,34 @@ namespace PokeCounter
             IncrementCounter(-currentProfile.incrementAmount);
         }
 
-        List<GlobalHotkey> OccupiedKeys
+        List<KeyCombination> OccupiedKeys
         {
             get
             {
-                List<GlobalHotkey> keys = new List<GlobalHotkey>();
+                List<KeyCombination> keys = new List<KeyCombination>();
 
                 foreach (var window in rcm.AllWindows)
                 {
-                    keys.Add(rcm.Query<GlobalHotkey>(window, Query.GetIncrementKey));
-                    keys.Add(rcm.Query<GlobalHotkey>(window, Query.GetIncrementKey));
+                    keys.Add(rcm.Query<KeyCombination>(window, Query.GetIncrementKey));
+                    keys.Add(rcm.Query<KeyCombination>(window, Query.GetDecrementKey));
+                }
+
+                var commands = Commands.CustomCommands.GetAllCommands();
+
+                foreach (var command in commands)
+                {
+                    foreach (var gesture in command.InputGestures)
+                    {
+                        if (gesture is KeyGesture keyGesture)
+                        {
+                            keys.Add(new KeyCombination(keyGesture.Key, keyGesture.Modifiers));
+                        }
+                    }
                 }
 
                 return keys;
             }
         }
-
-        private void BindGlobalIncrementKey_Click(object sender, RoutedEventArgs e)
-        {
-            incrementHook.KeyPressed -= IncrementHook_KeyPressed;
-            incrementHook.Dispose();
-            PressAnyButtonPopup popup = new PressAnyButtonPopup("global increment key", OccupiedKeys);
-            popup.occupiedKeys.Remove(currentProfile.incrementHotkey);
-
-            if (popup.ShowDialog().GetValueOrDefault(false))
-            {
-                currentProfile.incrementHotkey = popup.value;
-            }
-            TryRegisterHotkey(ref incrementHook, currentProfile.incrementHotkey, IncrementHook_KeyPressed);
-        }
-
-        private void BindGlobalDecrementKey_Click(object sender, RoutedEventArgs e)
-        {
-            decrementHook.KeyPressed -= DecrementHook_KeyPressed;
-            decrementHook.Dispose();
-            PressAnyButtonPopup popup = new PressAnyButtonPopup("global decrement key", OccupiedKeys);
-            popup.occupiedKeys.Remove(currentProfile.decrementHotkey);
-
-            if (popup.ShowDialog().GetValueOrDefault(false))
-            {
-                currentProfile.decrementHotkey = popup.value;
-            }
-            TryRegisterHotkey(ref decrementHook, currentProfile.decrementHotkey, DecrementHook_KeyPressed);
-        }
-
 
         #endregion
 
@@ -1720,6 +1772,28 @@ namespace PokeCounter
             return nextAvailableGroup;
         }
 
+        Dictionary<string, List<KeyCombination>> originalKeybindings = new Dictionary<string, List<KeyCombination>>();
+
+        void KeybindingsUpdated()
+        {
+            foreach (var item in ContextMenu.Items)
+            {
+                if (item is MenuItem mItem)
+                {
+                    if (mItem.Command != null)
+                    { // Refresh commands like wtf why do we have to do this
+                        var command = mItem.Command;
+                        mItem.Command = null;
+                        mItem.Command = command;
+                    }
+                }
+
+            }
+
+            CounterContextMenu.CommandBindings.Clear();
+            CounterContextMenu.CommandBindings.AddRange(CounterWindow.CommandBindings);
+        }
+
         #endregion
 
         #region Counter + Counter text
@@ -1791,25 +1865,6 @@ namespace PokeCounter
         #endregion
 
         #region Window Size
-
-        private void SetWindowSizeOption_Click(object sender, RoutedEventArgs e)
-        {
-            DualValuePopup setSizePopup = new DualValuePopup("Size", "x", "y"
-                , (int i) => { return i >= MinimumWidth; }
-                , (int i) => { return i >= MinimumHeight; });
-            setSizePopup.value1 = (int)Width;
-            setSizePopup.value2 = (int)Height;
-
-            if (setSizePopup.ShowDialog().GetValueOrDefault(false))
-            {
-                Width = setSizePopup.value1;
-                Height = setSizePopup.value2;
-
-                currentProfile.windowWidth = setSizePopup.value1;
-                currentProfile.windowHeight = setSizePopup.value2;
-                PushChange();
-            }
-        }
 
         private void ResetSizeOption_Click(object sender, RoutedEventArgs e)
         {
@@ -2207,6 +2262,82 @@ namespace PokeCounter
         {
             metaSettings.data.autosave = autosave;
             metaSettings.Save();
+        }
+
+        private void RebindControl_Click(object sender, RoutedEventArgs e)
+        {
+            DeregisterHotkeys();
+
+            var defaultProfile = CounterProfile.CreateDefault();
+
+            List<object> listEntries = new List<object>();
+
+            var label = new System.Windows.Controls.Label();
+            label.Content = "Global hotkeys (counter specific)";
+            listEntries.Add(label);
+
+            listEntries.Add(new KeybindingWrapper(
+                "Increment",
+                currentProfile.incrementHotkey, defaultProfile.incrementHotkey,
+                (kc) => { currentProfile.incrementHotkey = kc; }
+                ));
+            listEntries.Add(new KeybindingWrapper(
+                "Decrement",
+                currentProfile.decrementHotkey, defaultProfile.decrementHotkey,
+                (kc) => { currentProfile.decrementHotkey = kc; }
+                ));
+
+            listEntries.Add(new Separator());
+
+            label = new System.Windows.Controls.Label();
+            label.Content = "Commands";
+            listEntries.Add(label);
+
+            foreach (var command in Commands.CustomCommands.GetAllCommands())
+            {
+
+                listEntries.Add(new KeybindingWrapper(
+                    command.Text,
+                    new KeyCombination(command.InputGestures[0]), originalKeybindings[command.Name].FirstOrDefault(),
+                    (kc) => // Finished
+                    {
+                        command.InputGestures.Clear();
+                        command.InputGestures.Add(kc.Gesture);
+
+                        metaSettings.data.customKeybinds[command.Name] = kc;
+                        if (originalKeybindings.TryGetValue(command.Name, out List<KeyCombination> originalCombinations))
+                        {
+                            if (originalCombinations.FirstOrDefault() == kc)
+                            {
+                                metaSettings.data.customKeybinds.Remove(command.Name);
+                                command.InputGestures.Clear();
+
+                                foreach (var ogkc in originalCombinations)
+                                {
+                                    command.InputGestures.Add(ogkc.Gesture);
+                                }
+                            }
+                        }
+
+                    },
+
+                    (KeyCombination kc, out string reason) =>
+                    {
+                        reason = "Command needs modifiers";
+                        return kc.modifierKeys != 0;
+                    }
+                    ));
+            }
+
+            PressAnyButtonPopup popup = new PressAnyButtonPopup($"Rebind commands", OccupiedKeys, listEntries);
+
+            if (popup.ShowDialog().GetValueOrDefault(false))
+            {
+                KeybindingsUpdated();
+                metaSettings.Save();
+            }
+
+            RegisterHotkeys();
         }
 
         #endregion

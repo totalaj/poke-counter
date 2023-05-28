@@ -39,6 +39,7 @@ namespace PokeCounter
             protected Parser parser;
             protected string identifier;
             protected T value;
+            public bool exists;
 
             public override bool IdentifyArgument(string arg)
             {
@@ -47,6 +48,7 @@ namespace PokeCounter
 
             public override bool Parse(string[] args, ref int index)
             {
+                exists = true;
                 if (args.Length > index + 1)
                 {
                     index++;
@@ -64,7 +66,11 @@ namespace PokeCounter
             public BoolArgument(string identifier, bool defaultValue = false) : base(identifier)
             { value = defaultValue; }
 
-            public override bool Parse(string[] args, ref int index) => value = true;
+            public override bool Parse(string[] args, ref int index)
+            {
+                exists = true;
+                return value = true;
+            }
 
         }
 
@@ -104,6 +110,7 @@ namespace PokeCounter
 
             public override bool Parse(string[] args, ref int index)
             {
+                exists = true;
                 value = args[index];
                 return true;
             }

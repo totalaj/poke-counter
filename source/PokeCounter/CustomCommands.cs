@@ -9,7 +9,35 @@ namespace PokeCounter.Commands
 {
     public static class CustomCommands
     {
-        public static readonly RoutedUICommand Save = new RoutedUICommand
+        public static List<RoutedUICommand> GetAllCommands()
+        {
+            List<RoutedUICommand> commands = new List<RoutedUICommand>();
+            var fields = typeof(CustomCommands).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+
+            foreach (var command in fields)
+            {
+                if (command.GetValue(null) is RoutedUICommand uiCommand)
+                {
+                    commands.Add(uiCommand);
+
+                }
+            }
+            return commands;
+        }
+
+        public static Dictionary<string, RoutedUICommand> GetAllCommandsMapped()
+        {
+            var commands = GetAllCommands();
+            Dictionary<string, RoutedUICommand> mappedCommands = new Dictionary<string, RoutedUICommand>();
+
+            foreach (var command in commands)
+            {
+                mappedCommands.Add(command.Name, command);
+            }
+            return mappedCommands;
+        }
+
+        public static RoutedUICommand Save = new RoutedUICommand
     (
         "Save",
         "Save",
@@ -23,7 +51,7 @@ namespace PokeCounter.Commands
         public static readonly RoutedUICommand SaveAs = new RoutedUICommand
     (
         "Save as...",
-        "Save as...",
+        "saveAsCommand",
         typeof(CustomCommands),
         new InputGestureCollection()
         {
@@ -34,7 +62,7 @@ namespace PokeCounter.Commands
         public static readonly RoutedUICommand Load = new RoutedUICommand
     (
         "Load profile",
-        "Load profile",
+        "loadCommand",
         typeof(CustomCommands),
         new InputGestureCollection()
         {
@@ -44,7 +72,7 @@ namespace PokeCounter.Commands
        public static readonly RoutedUICommand Undo = new RoutedUICommand
     (
         "Undo",
-        "Undo",
+        "undoCommand",
         typeof(CustomCommands),
         new InputGestureCollection()
         {
@@ -54,7 +82,7 @@ namespace PokeCounter.Commands
        public static readonly RoutedUICommand Redo = new RoutedUICommand
     (
         "Redo",
-        "Redo",
+        "redoCommand",
         typeof(CustomCommands),
         new InputGestureCollection()
         {
@@ -65,7 +93,7 @@ namespace PokeCounter.Commands
        public static readonly RoutedUICommand New = new RoutedUICommand
     (
         "New profile",
-        "New profile",
+        "newCommand",
         typeof(CustomCommands),
         new InputGestureCollection()
         {
@@ -76,7 +104,7 @@ namespace PokeCounter.Commands
         public static readonly RoutedUICommand Close = new RoutedUICommand
     (
         "Close",
-        "Close",
+        "closeCommand",
         typeof(CustomCommands),
         new InputGestureCollection()
         {
@@ -87,7 +115,7 @@ namespace PokeCounter.Commands
         public static readonly RoutedUICommand SelectPokemon = new RoutedUICommand
     (
         "Select pokemon",
-        "Select pokemon",
+        "selectPokemonCommand",
         typeof(CustomCommands),
         new InputGestureCollection()
         {
@@ -99,7 +127,7 @@ namespace PokeCounter.Commands
         public static readonly RoutedUICommand Duplicate = new RoutedUICommand
     (
         "Duplicate window",
-        "Duplicate window",
+        "duplicateCommand",
         typeof(CustomCommands),
         new InputGestureCollection()
         {
@@ -110,7 +138,7 @@ namespace PokeCounter.Commands
         public static readonly RoutedUICommand Group = new RoutedUICommand
     (
         "Group",
-        "Group",
+        "groupCommand",
         typeof(CustomCommands),
         new InputGestureCollection()
         {
@@ -120,7 +148,7 @@ namespace PokeCounter.Commands
         public static readonly RoutedUICommand SaveGroup = new RoutedUICommand
     (
         "Save Group",
-        "Save Group",
+        "saveGroupCommand",
         typeof(CustomCommands),
         new InputGestureCollection()
         {
@@ -131,7 +159,7 @@ namespace PokeCounter.Commands
         public static readonly RoutedUICommand ShowOdds = new RoutedUICommand
     (
         "Show Odds",
-        "Show Odds",
+        "showOddsCommand",
         typeof(CustomCommands),
         new InputGestureCollection()
         {
@@ -142,7 +170,7 @@ namespace PokeCounter.Commands
         public static readonly RoutedUICommand LockSize = new RoutedUICommand
     (
         "Lock Size",
-        "Lock Size",
+        "lockSizeCommand",
         typeof(CustomCommands),
         new InputGestureCollection()
         {
@@ -153,11 +181,22 @@ namespace PokeCounter.Commands
         public static readonly RoutedUICommand AlwaysOnTop = new RoutedUICommand
     (
         "Always on top",
-        "Always on top",
+        "alwaysOnTopCommand",
         typeof(CustomCommands),
         new InputGestureCollection()
         {
             new KeyGesture(Key.T, ModifierKeys.Alt)
+        }
+    );
+
+        public static readonly RoutedUICommand Resize = new RoutedUICommand
+    (
+        "Resize",
+        "resizeCommand",
+        typeof(CustomCommands),
+        new InputGestureCollection()
+        {
+            new KeyGesture(Key.R, ModifierKeys.Control)
         }
     );
 

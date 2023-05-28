@@ -1,0 +1,22 @@
+﻿<UserControl x:Class="PokeCounter.KeybindingInput"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:PokeCounter"
+             mc:Ignorable="d" Height="25" KeyDown="KeybindingInput_KeyDown" KeyUp="KeybindingInput_KeyUp" MouseDown="KeybindingInput_MouseDown" Focusable="True" BorderBrush="#FF666666" Width="431">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="10"/>
+            <ColumnDefinition Width="100"/>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="50"/>
+            <ColumnDefinition Width="10"/>
+        </Grid.ColumnDefinitions>
+        <Label x:Name="NameLabel" Content="Label" HorizontalAlignment="Center" VerticalAlignment="Center" HorizontalContentAlignment="Right" Background="#FFE4C4A9" Width="100" Grid.Column="1"/>
+        <Label x:Name="KeyText" Content="invalid value!" Height="25" VerticalAlignment="Center" Foreground="Black" Grid.Column="2" HorizontalAlignment="Stretch" BorderBrush="#FF898989"/>
+        <Label x:Name="SecondaryLabel" Content="click to rebind" Height="25" VerticalAlignment="Center" Foreground="Black" HorizontalAlignment="Left" Grid.Column="3"/>
+        <Button Grid.Column="4" Content="Default" Click="Button_Click"></Button>
+    </Grid>
+</UserControl>
