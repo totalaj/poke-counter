@@ -32,7 +32,7 @@ namespace PokeCounter
             this.occupiedKeys = occupiedKeys;
             this.wrapper = wrapper;
             NameLabel.Content = wrapper.name;
-            validInput = true;
+            validInput = wrapper.IsValid(out invalidReason);
             originalValue = new KeyCombination(wrapper.value);
             localValue = new KeyCombination(wrapper.value);
 

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Input;
 
@@ -80,7 +81,7 @@ namespace PokeCounter
         /// </summary>
         /// <param name="modifier">The modifiers that are associated with the hot key.</param>
         /// <param name="key">The key itself that is associated with the hot key.</param>
-        public bool RegisterHotKey(ModifierKeys modifier, Key key)
+        public bool RegisterHotKey(ModifierKeys modifier, Key key, bool promptOnFailure = true)
         {
             // increment the counter.
             _currentId = _currentId + 1;
@@ -96,15 +97,19 @@ namespace PokeCounter
                 {
                     string keyCombo = key.ToString();
                     if (modifier != 0) keyCombo = (modifier.ToString() + "+") + keyCombo;
-#if RELEASE
-                    var mResult = System.Windows.Forms.MessageBox.Show($"Failed to register hotkey {keyCombo}!\nTry again?", "Failed", MessageBoxButtons.YesNo);
-                    if (mResult == System.Windows.Forms.DialogResult.No)
+
+                    if (promptOnFailure)
+                    {
+                        var mResult = System.Windows.MessageBox.Show($"Failed to register hotkey {keyCombo}!\nTry again?", "Failed", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                        if (mResult == MessageBoxResult.No)
+                        {
+                            registerLoop = false;
+                        }
+                    }
+                    else
                     {
                         registerLoop = false;
                     }
-#else
-                    registerLoop = false;
-#endif
                 }
                 else
                 {
@@ -120,7 +125,7 @@ namespace PokeCounter
         /// </summary>
         public event EventHandler<KeyPressedEventArgs> KeyPressed;
 
-#region IDisposable Members
+        #region IDisposable Members
 
         public void Dispose()
         {
@@ -134,7 +139,7 @@ namespace PokeCounter
             _window.Dispose();
         }
 
-#endregion
+        #endregion
     }
 
     /// <summary>

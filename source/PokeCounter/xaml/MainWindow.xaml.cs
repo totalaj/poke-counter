@@ -133,21 +133,21 @@ namespace PokeCounter
 
             if (startupArguments.forceDefault)
             {
-                InitializeFromProfile(CounterProfile.CreateDefault(), true);
+                InitializeFromProfile(CounterProfile.CreateDefault(), true, false);
             }
 
             if (File.Exists(startupArguments.startupFile) && currentProfile == null)
             {
-                OpenFile(startupArguments.startupFile);
+                OpenFile(startupArguments.startupFile, false);
             }
             if (File.Exists(metaSettings.data.lastProfilePath) && currentProfile == null)
             {
-                OpenFile(metaSettings.data.lastProfilePath);
+                OpenFile(metaSettings.data.lastProfilePath, false);
             }
 
             if (currentProfile == null)
             {
-                InitializeFromProfile(CounterProfile.CreateDefault(), true);
+                InitializeFromProfile(CounterProfile.CreateDefault(), true, false);
             }
 
             undoList.PushChange(currentProfile);
@@ -1080,7 +1080,7 @@ namespace PokeCounter
         #region Save/File Management
 
 
-        private void InitializeFromProfile(CounterProfile profile, bool alwaysLoadImage = false)
+        private void InitializeFromProfile(CounterProfile profile, bool alwaysLoadImage = false, bool promptOnHotkeyFailure = true)
         {
             var previousProfile = currentProfile;
             currentProfile = profile;
@@ -1137,7 +1137,7 @@ namespace PokeCounter
             BackgroundImage.Width = profile.imageWidth;
             BackgroundImage.Height = profile.imageHeight;
 
-            RegisterHotkeys();
+            RegisterHotkeys(promptOnHotkeyFailure);
 
             if (profile.path != null)
             {
@@ -1159,7 +1159,7 @@ namespace PokeCounter
             SetDirty();
         }
 
-        void OpenFile(string path)
+        void OpenFile(string path, bool promptOnHotkeyFailure = true)
         {
             if (!File.Exists(path))
             {
@@ -1179,7 +1179,7 @@ namespace PokeCounter
             var profile = CounterProfile.LoadFrom(path);
             if (profile != null)
             {
-                InitializeFromProfile(profile);
+                InitializeFromProfile(profile, false, promptOnHotkeyFailure);
                 undoList.Clear();
                 metaSettings.data.recentProfiles.Add(path);
                 metaSettings.data.lastProfilePath = path;
@@ -1273,7 +1273,7 @@ namespace PokeCounter
             CounterProfile undoProfile = new CounterProfile();
             if (undoList.Undo(ref undoProfile))
             {
-                InitializeFromProfile(undoProfile);
+                InitializeFromProfile(undoProfile, false);
             }
         }
 
@@ -1288,7 +1288,7 @@ namespace PokeCounter
             CounterProfile redoProfile = new CounterProfile();
             if (undoList.Redo(ref redoProfile))
             {
-                InitializeFromProfile(redoProfile);
+                InitializeFromProfile(redoProfile, false);
             }
         }
 
@@ -1535,10 +1535,10 @@ namespace PokeCounter
 
         #region Hotkeys
 
-        public void RegisterHotkeys()
+        public void RegisterHotkeys(bool promptOnFailure = true)
         {
-            TryRegisterHotkey(ref incrementHook, currentProfile.incrementHotkey, IncrementHook_KeyPressed);
-            TryRegisterHotkey(ref decrementHook, currentProfile.decrementHotkey, DecrementHook_KeyPressed);
+            TryRegisterHotkey(ref incrementHook, currentProfile.incrementHotkey, IncrementHook_KeyPressed, promptOnFailure);
+            TryRegisterHotkey(ref decrementHook, currentProfile.decrementHotkey, DecrementHook_KeyPressed, promptOnFailure);
         }
 
         public void DeregisterHotkeys()
@@ -1549,7 +1549,7 @@ namespace PokeCounter
             decrementHook.Dispose();
         }
 
-        static bool TryRegisterHotkey(ref KeyboardHook refHook, KeyCombination hotkey, EventHandler<KeyPressedEventArgs> function)
+        static bool TryRegisterHotkey(ref KeyboardHook refHook, KeyCombination hotkey, EventHandler<KeyPressedEventArgs> function, bool promptOnFailure = true)
         {
             if (refHook != null)
             {
@@ -1557,7 +1557,7 @@ namespace PokeCounter
                 refHook.Dispose();
             }
             refHook = new KeyboardHook();
-            var result = refHook.RegisterHotKey(hotkey.modifierKeys, hotkey.keys);
+            var result = refHook.RegisterHotKey(hotkey.modifierKeys, hotkey.keys, promptOnFailure);
             if (!result) return false;
             refHook.KeyPressed += function;
             return true;
@@ -2305,13 +2305,38 @@ namespace PokeCounter
             listEntries.Add(new KeybindingWrapper(
                 "Increment",
                 currentProfile.incrementHotkey, defaultProfile.incrementHotkey,
-                (kc) => { currentProfile.incrementHotkey = kc; }
+                (kc) => { currentProfile.incrementHotkey = kc; },
+                (KeyCombination kc, out string reason) =>
+                {
+                    KeyboardHook hook = new KeyboardHook();
+                    if (!hook.RegisterHotKey(kc.modifierKeys, kc.keys, false))
+                    {
+                        reason = "Hotkey already registered!";
+                        hook.Dispose();
+                        return false;
+                    }
+                    reason = "Valid";
+                    hook.Dispose();
+                    return true;
+                }
                 ));
             listEntries.Add(new KeybindingWrapper(
                 "Decrement",
                 currentProfile.decrementHotkey, defaultProfile.decrementHotkey,
-                (kc) => { currentProfile.decrementHotkey = kc; }
-                ));
+                (kc) => { currentProfile.decrementHotkey = kc; },
+                (KeyCombination kc, out string reason) =>
+                {
+                    KeyboardHook hook = new KeyboardHook();
+                    if (!hook.RegisterHotKey(kc.modifierKeys, kc.keys, false))
+                    {
+                        reason = "Hotkey already registered!";
+                        hook.Dispose();
+                        return false;
+                    }
+                    reason = "Valid";
+                    hook.Dispose();
+                    return true;
+                }));
 
             listEntries.Add(new Separator());
 
