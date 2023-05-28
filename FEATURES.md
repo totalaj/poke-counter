@@ -17,15 +17,18 @@
 - Setting shiny odds to count towards
 - Setting exact window size and locking window size
 - Choosing whether window is kept on top of all apps
+- Grouping windows together
+- Saving groups of windows to a group file
+- Rebinding keys and commands
 - Dragging window is in fact possible
 
 ## actions
 
 `enter` increments the counter (cannot be rebound)
 
-`up` and `down` arrow keys increments/decrements counter (cannot be rebound)
+`up` and `down` arrow keys increments/decrements counter
 
-`add` and `subtract` keys increments/decrements counter as global hotkeys (CAN be rebound)
+`add` and `subtract` keys increments/decrements counter as global hotkeys
 
 `escape` exits the program when held
 
@@ -45,4 +48,22 @@
 
 `ctrl+o` opens a counter
 
-`ctrl+n` creates a new counter
+`ctrl+n` creates a new counter window
+
+`ctrl+g` opens a group prompt, or ungroups if counter is already part of a group
+
+`ctrl+shift+g` opens the group prompt and saves as a group file
+
+`ctrl+w` closes the counter
+
+`ctrl+p` opens the pokemon selector window
+
+`ctrl+d` duplicates the current window
+
+`alt+o` toggles showing odds
+
+`alt+l` toggles size lock
+
+`alt+t` toggles always on top
+
+`ctrl+r` opens resizing window
