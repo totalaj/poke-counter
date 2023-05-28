@@ -10,15 +10,6 @@ namespace PokeCounter
 {
     public partial class App : Application
     {
-        // Delegate to filter which windows to include 
-        public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
-
-        [DllImport("user32.dll")]
-        private static extern bool EnumWindows(EnumWindowsProc enumProc, IntPtr lParam);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
-
         private void Application_Startup(object sender, StartupEventArgs e)
         {
             string startupFile = null;
@@ -52,51 +43,34 @@ namespace PokeCounter
                 {
                     System.Threading.Thread.Sleep(1000);
                     cont = false;
-                    try
+
+                    rcm.GatherWindows();
+                    if (rcm.otherWindows.Count != processes.Count) cont = true;
+                    foreach (var window in rcm.otherWindows)
                     {
-                        for (int processIndex = processes.Count - 1; processIndex >= 0; processIndex--)
+                        if (rcm.SendMessage(window, Message.Ping).ToInt32() != 1)
                         {
-                            var process = processes[processIndex];
-                            bool enumeratedWindows = false;
-                            EnumWindows(delegate (IntPtr wnd, IntPtr param)
-                            {
-                                GetWindowThreadProcessId(wnd, out uint id);
-
-                                if (id != process.Id)
-                                {
-                                    return true;
-                                }
-
-                                enumeratedWindows = true;
-
-                                var result = rcm.SendMessage(wnd, Message.Ping).ToInt32();
-                                if (result != 1)
-                                {
-                                    cont = true;
-                                }
-                                else
-                                {
-                                    processes.RemoveAt(processIndex);
-                                }
-                                return true;
-                            }, IntPtr.Zero);
-
-                            if (!enumeratedWindows) cont = true;
-                        }
-                        if (!cont)
-                        {
-                            break;
+                            cont = true;
                         }
                     }
-                    catch (Exception exception)
+
+                    for (int processIndex = processes.Count - 1; processIndex >= 0; processIndex--)
                     {
-                        MessageBox.Show(exception.Message);
+                        if (processes[processIndex].HasExited)
+                        {
+                            processes.RemoveAt(processIndex);
+                        }
+                    }
+
+                    if (!cont)
+                    {
+                        break;
                     }
                 }
 
                 if (cont)
                 {
-                    var result = MessageBox.Show($"Couldn't successfully open {processes.Count} counters! Continue anyway?", "Failure!", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                    var result = MessageBox.Show($"Couldn't successfully open all counters! Continue anyway?", "Failure!", MessageBoxButton.YesNo, MessageBoxImage.Warning);
                     if (result == MessageBoxResult.No)
                     {
                         rcm.GatherWindows();
@@ -115,19 +89,12 @@ namespace PokeCounter
                 rcm.BroadcastMessage(Message.RefreshOtherWindows);
                 rcm.BroadcastMessage(Message.Show);
 
-                foreach (var process in processes)
-                {
-                    process.Kill();
-                }
-
                 Shutdown();
                 return;
             }
 
             MainWindow wnd = new MainWindow(e.Args);
-
             wnd.Show();
-            MainWindow = wnd;
         }
     }
 }

@@ -225,9 +225,6 @@ namespace PokeCounter
 
             KeybindingsUpdated();
 
-            System.Windows.Application.Current.MainWindow = this;
-            communicable = true;
-
             if (startupArguments.startHidden)
             {
                 Topmost = false;
@@ -577,6 +574,7 @@ namespace PokeCounter
             if (startupArguments.startHidden)
             {
                 Hide();
+                communicable = true;
             }
             source.AddHook(WndProc);
             rcm = new RemoteControlManager(this);
