@@ -2455,10 +2455,10 @@ namespace PokeCounter
             new FileAssociation
             {
                 Extension = ".counterGroup",
-                ProgId = "PokeCounter.Counter",
+                ProgId = "PokeCounter.CounterGroup",
                 FileTypeDescription = "PokeCounter Counter Group",
                 ExecutableFilePath = Paths.Executable,
-                FileIcon = Path.Combine(Paths.ExecutableDirectory, "icons", "pc file.ico")
+                FileIcon = Path.Combine(Paths.ExecutableDirectory, "icons", "pc group file.ico")
             }
             );
         }

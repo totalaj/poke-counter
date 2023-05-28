@@ -184,6 +184,9 @@
     <None Update="icons\pc file.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="icons\pc group file.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="icons\pc logo.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
