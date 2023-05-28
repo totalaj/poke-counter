@@ -1399,6 +1399,7 @@ namespace PokeCounter
                         {
                             rcm.SendMessage(window, Message.WriteProfilePathToGroupFile);
                             rcm.SendMessage(window, Message.SetGroup, nextAvailableGroup);
+                            rcm.SendMessage(window, Message.SetGroupShutdown, 1);
                             profileLayouts.Add(rcm.Query<LayoutData>(window, Query.LayoutData));
                         }
                     }
