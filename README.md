@@ -1,5 +1,4 @@
 # PokeCounter
-A lightweight customizable pokemon counter for shiny hunters
 
 ![Overview of PokeCounter](img/readme/app-overview.png)
 
