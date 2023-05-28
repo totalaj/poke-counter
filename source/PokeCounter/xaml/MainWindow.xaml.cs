@@ -88,6 +88,7 @@ namespace PokeCounter
         public static string WindowTitle = "PokeCounter Window";
 
         bool MouseIsDown => GetAsyncKeyState(VK_LBUTTON) < 0;
+        bool communicable = false;
 
         #endregion
 
@@ -223,6 +224,14 @@ namespace PokeCounter
             }
 
             KeybindingsUpdated();
+
+            System.Windows.Application.Current.MainWindow = this;
+            communicable = true;
+
+            if (startupArguments.startHidden)
+            {
+                Topmost = false;
+            }
         }
 
         public class MainWindowArguments : ArgumentParser
@@ -564,11 +573,11 @@ namespace PokeCounter
         protected override void OnSourceInitialized(EventArgs e)
         {
             base.OnSourceInitialized(e);
+            HwndSource source = PresentationSource.FromVisual(this) as HwndSource;
             if (startupArguments.startHidden)
             {
                 Hide();
             }
-            HwndSource source = PresentationSource.FromVisual(this) as HwndSource;
             source.AddHook(WndProc);
             rcm = new RemoteControlManager(this);
         }
@@ -579,8 +588,12 @@ namespace PokeCounter
             {
                 case Message.Ping:
                     {
-                        handled = true;
-                        return new IntPtr(1);
+                        if (communicable)
+                        {
+                            handled = true;
+                            return new IntPtr(1);
+                        }
+                        break;
                     }
                 case Message.Handshake:
                     {
@@ -682,6 +695,7 @@ namespace PokeCounter
                 case Message.Show:
                     {
                         handled = true;
+                        Topmost = metaSettings.data.topmost;
                         Show();
                         break;
                     }
@@ -1768,8 +1782,11 @@ namespace PokeCounter
             HashSet<int> occupiedGroups = new HashSet<int>();
             foreach (var window in optionalRCM.otherWindows)
             {
-                int group = optionalRCM.SendMessage(window, Message.GetGroup).ToInt32();
-                occupiedGroups.Add(group);
+                if (optionalRCM.SendMessage(window, Message.Ping).ToInt32() == 1)
+                {
+                    int group = optionalRCM.SendMessage(window, Message.GetGroup).ToInt32();
+                    occupiedGroups.Add(group);
+                }
             }
 
             int nextAvailableGroup = 0;
@@ -2338,7 +2355,6 @@ namespace PokeCounter
 
             foreach (var command in Commands.CustomCommands.GetAllCommands())
             {
-
                 listEntries.Add(new KeybindingWrapper(
                     command.Text,
                     new KeyCombination(command.InputGestures[0]), originalKeybindings[command.Name].FirstOrDefault(),
