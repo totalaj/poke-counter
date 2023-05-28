@@ -351,11 +351,7 @@
                         <Image Source="/icons/lightning.png"/>
                     </MenuItem.Icon>
                 </MenuItem>
-            </MenuItem>
-            <MenuItem Header="Actions">
-                <MenuItem.Icon>
-                    <Image Source="/icons/lightning.png"/>
-                </MenuItem.Icon>
+                <Separator/>
                 <MenuItem Header="Setup file association" Click="SetupFileAssociationOption_Click">
                     <MenuItem.Icon>
                         <Image Source="/icons/paper-clip.png"/>

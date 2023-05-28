@@ -30,6 +30,8 @@ namespace PokeCounter
         public bool autosave = true;
         public Dictionary<string, KeyCombination> customKeybinds = new Dictionary<string, KeyCombination>();
 
+        public Key incrementKey = Key.Up, decrementKey = Key.Down;
+
         public bool Verify()
         {
             return recentProfiles.RemoveWhere(s => !File.Exists(s)) > 0;
@@ -262,15 +264,17 @@ namespace PokeCounter
 
         private void CounterWindow_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
+            if (e.Key == metaSettings.data.incrementKey || e.Key == Key.Enter)
+            {
+                IncrementCounter(currentProfile.incrementAmount);
+            }
+            if (e.Key == metaSettings.data.decrementKey)
+            {
+                IncrementCounter(-currentProfile.incrementAmount);
+            }
+
             switch (e.Key)
             {
-                case Key.Up:
-                case Key.Enter:
-                    IncrementCounter(currentProfile.incrementAmount);
-                    break;
-                case Key.Down:
-                    IncrementCounter(-currentProfile.incrementAmount);
-                    break;
                 case Key.Escape:
                     escapeHeld = true;
                     break;
@@ -1562,6 +1566,12 @@ namespace PokeCounter
             {
                 List<KeyCombination> keys = new List<KeyCombination>();
 
+                keys.Add(new KeyCombination(metaSettings.data.incrementKey, 0));
+                keys.Add(new KeyCombination(metaSettings.data.decrementKey, 0));
+                // Hard coded key combinations from elsewhere
+                keys.Add(new KeyCombination(Key.Enter, 0));
+                keys.Add(new KeyCombination(Key.Escape, 0));
+
                 foreach (var window in rcm.AllWindows)
                 {
                     keys.Add(rcm.Query<KeyCombination>(window, Query.GetIncrementKey));
@@ -2292,6 +2302,39 @@ namespace PokeCounter
             label = new System.Windows.Controls.Label();
             label.Content = "Commands";
             listEntries.Add(label);
+
+            listEntries.Add(new KeybindingWrapper(
+                "Increment key",
+                new KeyCombination(metaSettings.data.incrementKey, 0), new KeyCombination(Key.Up, 0),
+                (kc) => { metaSettings.data.incrementKey = kc.keys; },
+                (KeyCombination kc, out string reason) =>
+                {
+                    if (kc.modifierKeys != 0)
+                    {
+                        reason = "Can't have modifiers!";
+                        return false;
+                    }
+
+                    reason = "Valid";
+                    return true;
+                }
+                ));
+            listEntries.Add(new KeybindingWrapper(
+                "Decrement key",
+                new KeyCombination(metaSettings.data.decrementKey, 0), new KeyCombination(Key.Down, 0),
+                (kc) => { metaSettings.data.decrementKey = kc.keys; },
+                (KeyCombination kc, out string reason) =>
+                {
+                    if (kc.modifierKeys != 0)
+                    {
+                        reason = "Can't have modifiers!";
+                        return false;
+                    }
+
+                    reason = "Valid";
+                    return true;
+                }
+                ));
 
             foreach (var command in Commands.CustomCommands.GetAllCommands())
             {
