@@ -11,6 +11,8 @@
 - Customization (background, image, text, window size)
 - Setting odds, and cumulative percentage calculation
 - Selecting a pokemon sprite from PokeAPI
+- Grouping counters together for multi-hunts
+- Keybinding
 
 ![Pokemon sprite being chosen from PokeAPI popup](img/readme/pokemon-selector.png)
 
@@ -29,10 +31,7 @@ Registering icon for associated files requires running with administrator privil
 
 ## Planned features
 
-- Autosave
 - More customizations for text
-- Remember window position for easier multiple counter layout
-- More and better keybinding
 - Audio cues
-- Basic application for remote controlling counters
 - Custom shaders with access to stats and count, et cetera
+- Calculating shiny odds based on game and method
