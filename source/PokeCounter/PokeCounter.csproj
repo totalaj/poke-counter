@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <None Remove="0251Celebi.png" />
+    <None Remove="audio\defaultSound.wav" />
     <None Remove="icons\align-bottom.png" />
     <None Remove="icons\align-horizontal.png" />
     <None Remove="icons\align-left.png" />
@@ -56,6 +57,7 @@
     <None Remove="icons\link.png" />
     <None Remove="icons\menu.png" />
     <None Remove="icons\minus.png" />
+    <None Remove="icons\music-note.png" />
     <None Remove="icons\palette.png" />
     <None Remove="icons\paper-clip.png" />
     <None Remove="icons\percent.png" />
@@ -68,6 +70,8 @@
     <None Remove="icons\save.png" />
     <None Remove="icons\settings.png" />
     <None Remove="icons\sliders-alt.png" />
+    <None Remove="icons\sound-x.png" />
+    <None Remove="icons\sound.png" />
     <None Remove="icons\star.png" />
     <None Remove="icons\unfold-less.png" />
     <None Remove="icons\unfold-more.png" />
@@ -127,6 +131,9 @@
     <Resource Include="icons\link.png" />
     <Resource Include="icons\menu.png" />
     <Resource Include="icons\minus.png" />
+    <Resource Include="icons\music-note.png">
+      <CopyToOutputDirectory></CopyToOutputDirectory>
+    </Resource>
     <Resource Include="icons\palette.png" />
     <Resource Include="icons\paper-clip.png" />
     <Resource Include="icons\percent.png" />
@@ -138,12 +145,19 @@
     <Resource Include="icons\save.png" />
     <Resource Include="icons\settings.png" />
     <Resource Include="icons\sliders-alt.png" />
+    <Resource Include="icons\sound-x.png">
+      <CopyToOutputDirectory></CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="icons\sound.png" />
     <Resource Include="icons\star.png" />
     <Resource Include="icons\unfold-less.png" />
     <Resource Include="icons\unfold-more.png" />
     <Resource Include="icons\wrench.png" />
     <Resource Include="icons\zoom-in.png" />
     <Resource Include="icons\zoom-out.png" />
+    <Content Include="audio\defaultSound.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="images\0251Celebi.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -151,6 +165,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="DiscordRichPresence" Version="1.2.1.24" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Ookii.Dialogs.Wpf" Version="5.0.1" />
     <PackageReference Include="PixiEditor.ColorPicker" Version="3.3.1" />

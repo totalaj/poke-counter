@@ -25,6 +25,10 @@ namespace PokeCounter
         Increment,
         Decrement,
         SetValue,
+        /// <summary>
+        /// ReturnValue = value of counter
+        /// </summary>
+        GetValue,
         Save,
         /// <summary>
         /// wParam = EdgeHighlight enum

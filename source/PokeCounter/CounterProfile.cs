@@ -106,6 +106,7 @@ namespace PokeCounter
             uniqueIdentifier = "official"
         };
         public string cachedImageURL = "";
+        public string audioPath = System.IO.Path.Combine(Paths.ExecutableDirectory, "audio", "defaultSound.wav");
 
         public KeyCombination incrementHotkey = new KeyCombination(Key.Add, 0);
         public KeyCombination decrementHotkey = new KeyCombination(Key.Subtract, 0);
@@ -124,18 +125,19 @@ namespace PokeCounter
 
             if (!File.Exists(path))
             {
-                System.Windows.MessageBox.Show("Invalid profile path!", "Oopsie!", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show($"Invalid profile path!\n{path}\nCould not be found", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
                 return profile;
             }
 
             string text = File.ReadAllText(path);
             CounterProfile loadedProfile = JsonConvert.DeserializeObject<CounterProfile>(text);
-            loadedProfile.path = path;
             if (loadedProfile == null)
             {
-                System.Windows.MessageBox.Show("Profile failed to load!", "Oopsie!", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show($"Profile failed to load!\n{path}\nCould not be loaded", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
                 return profile;
             }
+
+            loadedProfile.path = path;
 
             return loadedProfile;
         }

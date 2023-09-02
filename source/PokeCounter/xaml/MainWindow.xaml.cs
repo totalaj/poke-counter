@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json;
+﻿using DiscordRPC;
+using DiscordRPC.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -28,6 +30,8 @@ namespace PokeCounter
         public PokemonInfoList pokemonDatas = null;
         public bool topmost = true;
         public bool autosave = true;
+        public bool useRichPresence = true;
+        public bool playAudio = true;
         public Dictionary<string, KeyCombination> customKeybinds = new Dictionary<string, KeyCombination>();
 
         public Key incrementKey = Key.Up, decrementKey = Key.Down;
@@ -47,6 +51,7 @@ namespace PokeCounter
         static extern short GetAsyncKeyState(int vKey);
 
         // Const variables
+        public static string WindowTitle = "PokeCounter Window";
         readonly FloatToStringMap oddsMap = new FloatToStringMap(new List<KeyValuePair<float, string>>
         {
             new KeyValuePair<float, string>(0, "You've got a long ways to go..."),
@@ -85,7 +90,11 @@ namespace PokeCounter
         readonly SettingsFile<MetaSettings> metaSettings = new SettingsFile<MetaSettings>("metaSettings.json", SourceFolderType.Documents);
         readonly UndoList<CounterProfile> undoList = new UndoList<CounterProfile>();
 
-        public static string WindowTitle = "PokeCounter Window";
+        DiscordRpcClient rpcClient;
+        DateTime lastLoadedTime;
+        int lastLoadedCount = 0;
+
+        MediaPlayer incrementSound = new MediaPlayer();
 
         bool MouseIsDown => GetAsyncKeyState(VK_LBUTTON) < 0;
         bool communicable = false;
@@ -129,7 +138,6 @@ namespace PokeCounter
                 }
             }
 
-            AutosaveOption.IsChecked = metaSettings.data.autosave;
 
             if (startupArguments.forceDefault)
             {
@@ -148,6 +156,7 @@ namespace PokeCounter
             if (currentProfile == null)
             {
                 InitializeFromProfile(CounterProfile.CreateDefault(), true, false);
+                lastLoadedTime = DateTime.UtcNow;
             }
 
             undoList.PushChange(currentProfile);
@@ -171,6 +180,14 @@ namespace PokeCounter
                 Dispatcher);
 
             new DispatcherTimer(
+                TimeSpan.FromMilliseconds(2000), DispatcherPriority.Background,
+                delegate
+                {
+                    UpdatePresence();
+                },
+                Dispatcher);
+
+            new DispatcherTimer(
                 TimeSpan.FromMilliseconds(1000 * 60 * 5), DispatcherPriority.Background,
                 delegate
                 {
@@ -178,6 +195,7 @@ namespace PokeCounter
                     {
                         Commands.CustomCommands.Save.Execute(true, this);
                     }
+                    rcm.GatherWindows();
                 },
                 Dispatcher);
 
@@ -224,6 +242,30 @@ namespace PokeCounter
             }
 
             KeybindingsUpdated();
+
+            // Discord rich presence
+            rpcClient = new DiscordRpcClient("719971525540708413");
+            rpcClient.Logger = new ConsoleLogger() { Level = LogLevel.Warning };
+            rpcClient.OnReady += (sender, e) =>
+            {
+                Console.WriteLine("Received Ready from user {0}", e.User.Username);
+            };
+
+            rpcClient.OnPresenceUpdate += (sender, e) =>
+            {
+                Console.WriteLine("Received Update! {0}", e.Presence);
+            };
+
+            rpcClient.Initialize();
+
+            if (metaSettings.data.useRichPresence)
+            {
+                EnablePresence();
+            }
+            else
+            {
+                DisablePresence();
+            }
 
             if (startupArguments.startHidden)
             {
@@ -388,6 +430,8 @@ namespace PokeCounter
                     popup.Close();
                 }
             }
+
+            rpcClient.Dispose();
         }
 
         private void CounterWindow_ContextMenuOpening(object sender, ContextMenuEventArgs e)
@@ -426,6 +470,8 @@ namespace PokeCounter
                 mi.Header = profile;
                 mi.Click += RecentProfile_Click;
                 CounterProfile profileObject = JsonConvert.DeserializeObject<CounterProfile>(File.ReadAllText(profile));
+
+                if (profileObject == null) continue;
 
                 string iconPath = "";
 
@@ -1137,6 +1183,8 @@ namespace PokeCounter
             BackgroundImage.Width = profile.imageWidth;
             BackgroundImage.Height = profile.imageHeight;
 
+            incrementSound.Open(new Uri(profile.audioPath));
+
             RegisterHotkeys(promptOnHotkeyFailure);
 
             if (profile.path != null)
@@ -1184,6 +1232,8 @@ namespace PokeCounter
                 metaSettings.data.recentProfiles.Add(path);
                 metaSettings.data.lastProfilePath = path;
                 metaSettings.Save();
+                lastLoadedTime = DateTime.UtcNow;
+                lastLoadedCount = profile.count;
             }
         }
 
@@ -1622,25 +1672,84 @@ namespace PokeCounter
             MainCounterText.Content = currentProfile.count.ToString();
             if (currentProfile.showOdds)
             {
-                float percent = 1f - MathF.Pow(1f - ((float)currentProfile.targetOddsShinyRolls / currentProfile.targetOdds), currentProfile.count);
-                if (currentProfile.count == 0) percent = 0;
-                float oddsFloat = (float)currentProfile.count / ((float)currentProfile.targetOdds / currentProfile.targetOddsShinyRolls);
-                string content = $"{(int)(percent * 10000) / 100f}%";
+                string content = $"{(int)(GetCurrentOddsPercent() * 100 * 100) / 100f}%";
 
                 if (currentProfile.targetOdds % currentProfile.targetOddsShinyRolls == 0)
                 {
                     content += $" ({currentProfile.targetOddsShinyRolls * currentProfile.count}/{currentProfile.targetOdds})";
                 }
 
-
-                OddsTextMotivation.Content = $"\n{oddsMap.GetString(oddsFloat)}";
+                OddsTextMotivation.Content = $"\n{oddsMap.GetString(GetOddsFloat())}";
                 OddsText.Content = content;
             }
+        }
+
+        private float GetOddsFloat()
+        {
+            return (float)currentProfile.count / ((float)currentProfile.targetOdds / currentProfile.targetOddsShinyRolls);
+        }
+
+        private float GetCurrentOddsPercent()
+        {
+            float percent = 1f - MathF.Pow(1f - ((float)currentProfile.targetOddsShinyRolls / currentProfile.targetOdds), currentProfile.count);
+            if (currentProfile.count == 0) percent = 0;
+            return percent;
         }
 
         void UpdateResizeText()
         {
             ResizingText.Text = $"{(int)Width}x{(int)Height}";
+        }
+
+        void UpdatePresence()
+        {
+            if (rpcClient == null) return;
+
+            if (metaSettings.data.useRichPresence)
+            {
+                if (rcm?.otherWindows.Count > 1 || groupMode)
+                {
+                    rpcClient.SetPresence(new RichPresence()
+                    {
+                        Details = "Counting multiple pokemon",
+                        
+                        Timestamps = new Timestamps(lastLoadedTime),
+                        Assets = new Assets()
+                        {
+                            SmallImageKey = "image_group",
+                            SmallImageText = "github.com/totalaj/poke-counter"
+                        }
+                    });
+                }
+                else
+                {
+                    rpcClient.SetPresence(new RichPresence()
+                    {
+                        Details = $"{Path.GetFileNameWithoutExtension(currentProfile.path)} | {currentProfile.count} ({currentProfile.count - lastLoadedCount} this session)",
+                        State = $"{(int)(GetCurrentOddsPercent() * 100 * 100) / 100f}% {oddsMap.GetString(GetOddsFloat())}",
+                        Timestamps = new Timestamps(lastLoadedTime),
+                        Assets = new Assets()
+                        {
+                            SmallImageKey = "image_main",
+                            SmallImageText = $"github.com/totalaj/poke-counter"
+                        }
+                    });
+                }
+            }
+            else
+            {
+                rpcClient.ClearPresence();
+            }
+        }
+
+        void DisablePresence()
+        {
+            rpcClient?.ClearPresence();
+        }
+
+        void EnablePresence()
+        {
+            UpdatePresence();
         }
 
         #endregion
@@ -1773,6 +1882,10 @@ namespace PokeCounter
             TextColorOption.IsEnabled = textColorPickerPopup?.IsLoaded != true;
             StatTextColorOption.IsEnabled = statTextColorPickerPopup?.IsLoaded != true;
             BackgroundColorOption.IsEnabled = backgroundColorPickerPopup?.IsLoaded != true;
+
+            AutosaveOption.IsChecked = metaSettings.data.autosave;
+            AudioOption.IsChecked = metaSettings.data.playAudio;
+            UseRichPresenceOption.IsChecked = metaSettings.data.useRichPresence;
         }
 
         public static int GetNextAvailableGroupIndex(RemoteControlManager optionalRCM = null)
@@ -1835,6 +1948,12 @@ namespace PokeCounter
 
         private void IncrementCounter(int delta)
         {
+            if (delta > 0 && metaSettings.data.playAudio)
+            {
+                incrementSound.Stop();
+                incrementSound.Play();
+            }
+
             currentProfile.count = Math.Max(0, currentProfile.count + delta);
             SetDirty();
             RefreshCounterText();
@@ -2284,9 +2403,55 @@ namespace PokeCounter
             SetAutosave(false);
         }
 
+
+        private void RichPresenceOption_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!IsInitialized) return;
+            SetUseRichPresence(true);
+        }
+
+        private void RichPresenceOption_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (!IsInitialized) return;
+            SetUseRichPresence(false);
+        }
+
+        private void PlayAudioOption_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!IsInitialized) return;
+            SetPlayAudio(true);
+        }
+
+        private void PlayAudioOption_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (!IsInitialized) return;
+            SetPlayAudio(false);
+        }
+
         void SetAutosave(bool autosave)
         {
             metaSettings.data.autosave = autosave;
+            metaSettings.Save();
+        }
+
+        void SetUseRichPresence(bool useRichPresence)
+        {
+            metaSettings.data.useRichPresence = useRichPresence;
+            metaSettings.Save();
+
+            if (useRichPresence)
+            {
+                EnablePresence();
+            }
+            else
+            {
+                DisablePresence();
+            }
+        }
+
+        void SetPlayAudio(bool playAudio)
+        {
+            metaSettings.data.playAudio = playAudio;
             metaSettings.Save();
         }
 
@@ -2423,6 +2588,23 @@ namespace PokeCounter
             RegisterHotkeys();
         }
 
+        private void AudioFileOption_Click(object sender, RoutedEventArgs e)
+        {
+            System.Windows.Forms.OpenFileDialog openFileDialog = new System.Windows.Forms.OpenFileDialog();
+            openFileDialog.Filter = $"Audio file|*.wav;*.mp3";
+            openFileDialog.Title = "Open Audio File";
+
+            var result = openFileDialog.ShowDialog();
+            if (result != System.Windows.Forms.DialogResult.OK) return;
+            if (!File.Exists(openFileDialog.FileName)) return;
+
+            currentProfile.audioPath = openFileDialog.FileName;
+            SetDirty();
+
+            incrementSound.Open(new Uri(currentProfile.audioPath));
+        }
+
+
         #endregion
 
         #region Other
@@ -2462,6 +2644,7 @@ namespace PokeCounter
             };
             System.Diagnostics.Process.Start(sInfo);
         }
+
 
         public static bool IsAdministrator =>
              new WindowsPrincipal(WindowsIdentity.GetCurrent())

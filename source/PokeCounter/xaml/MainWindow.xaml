@@ -296,6 +296,22 @@
                     </MenuItem.Icon>
                 </MenuItem>
             </MenuItem>
+
+            <MenuItem Header="Audio">
+                <MenuItem.Icon>
+                    <Image Source="/icons/sound.png"/>
+                </MenuItem.Icon>
+                <MenuItem x:Name="AudioFileOption" Header="Increment sound" Click="AudioFileOption_Click">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/music-note.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem StaysOpenOnClick="True" x:Name="AudioOption" Header="Play audio" IsCheckable="true" IsChecked="True" Checked="PlayAudioOption_Checked" Unchecked="PlayAudioOption_Unchecked">
+                    <MenuItem.Icon>
+                        <Image Source="/icons/sound-x.png"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                </MenuItem>
             <MenuItem StaysOpenOnClick="True" x:Name="ShowOdds" Header="Show odds" IsCheckable="true" IsChecked="True" Command="cmd:CustomCommands.ShowOdds"/>
             <MenuItem x:Name="SetTargetOddsOption" Header="Set target odds">
                 <MenuItem.Icon>
@@ -336,11 +352,12 @@
                 </MenuItem>
             </MenuItem>
             <Separator/>
-            <MenuItem StaysOpenOnClick="True" x:Name="AlwaysOnTopOption" Header="Always on top" IsCheckable="true" IsChecked="True" Command="cmd:CustomCommands.AlwaysOnTop"/>
             <MenuItem Header="Options">
                 <MenuItem.Icon>
                     <Image Source="/icons/settings.png"/>
                 </MenuItem.Icon>
+                <MenuItem StaysOpenOnClick="True" x:Name="AlwaysOnTopOption" Header="Always on top" IsCheckable="true" IsChecked="True" Command="cmd:CustomCommands.AlwaysOnTop"/>
+                <MenuItem StaysOpenOnClick="True" x:Name="UseRichPresenceOption" Header="Use rich presence" IsCheckable="true" IsChecked="True" Checked="RichPresenceOption_Checked" Unchecked="RichPresenceOption_Unchecked"/>
                 <MenuItem Header="Autosave" x:Name="AutosaveOption" StaysOpenOnClick="True" IsCheckable="true" IsChecked="True" Checked="AutosaveOption_Checked" Unchecked="AutosaveOption_Unchecked">
                     <MenuItem.Icon>
                         <Image Source="/icons/lightning.png"/>
