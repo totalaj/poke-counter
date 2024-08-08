@@ -66,7 +66,22 @@ namespace PokeCounter
         /// wParam = 0 is always close normally. 1 is close forcefully
         /// </summary>
         Close,
-
+        /// <summary>
+        /// Increments recieving counter if it has the same global hotkey
+        /// wParam = System.Input.Windows.Key enum
+        /// </summary>
+        IncrementIfSameHotkey,
+        /// <summary>
+        /// Decrements recieving counter if it has the same global hotkey
+        /// wParam = System.Input.Windows.Key enum
+        /// </summary>
+        DecrementIfSameHotkey,
+        /// <summary>
+        /// Deregs and reregs hotkeys in case it has been freed up since hotkeys were last tried
+        /// </summary>
+        RefreshHotkeyBindings,
+        DisableHotkeys,
+        EnableHotkeys,
     }
     /// <summary>
     /// Sends a struct immediately, is read by the reciever, and is disposed
@@ -91,11 +106,11 @@ namespace PokeCounter
     {
         LayoutData = 0x400 + 2000,
         /// <summary>
-        /// GlobalHotkey struct
+        /// KeyCombination struct
         /// </summary>
         GetIncrementKey,
         /// <summary>
-        /// GlobalHotkey struct
+        /// KeyCombination struct
         /// </summary>
         GetDecrementKey,
     }

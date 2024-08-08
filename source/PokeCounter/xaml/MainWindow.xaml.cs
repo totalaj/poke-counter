@@ -784,6 +784,43 @@ namespace PokeCounter
                         groupShutdown = wParam.ToInt32() == 1;
                         break;
                     }
+                case Message.IncrementIfSameHotkey:
+                    {
+                        handled = true;
+                        Key incomingHotkey = (Key)wParam;
+                        if (currentProfile.incrementHotkey.keys == incomingHotkey)
+                        {
+                            IncrementCounter(currentProfile.incrementAmount, muted: true);
+                        }
+                        break;
+                    }
+                case Message.DecrementIfSameHotkey:
+                    {
+                        handled = true;
+                        Key incomingHotkey = (Key)wParam;
+                        if (currentProfile.decrementHotkey.keys == incomingHotkey)
+                        {
+                            IncrementCounter(-currentProfile.incrementAmount, muted: true);
+                        }
+                        break;
+                    }
+                case Message.RefreshHotkeyBindings:
+                    {
+                        handled = true;
+                        DeregisterHotkeys();
+                        RegisterHotkeys();
+                        break;
+                    }
+                case Message.DisableHotkeys:
+                    {
+                        DeregisterHotkeys();
+                        break;
+                    }
+                case Message.EnableHotkeys:
+                    {
+                        RegisterHotkeys();
+                        break;
+                    }
                 default:
                     break;
             }
@@ -1621,11 +1658,13 @@ namespace PokeCounter
         private void IncrementHook_KeyPressed(object sender, KeyPressedEventArgs e)
         {
             IncrementCounter(currentProfile.incrementAmount);
+            rcm.BroadcastMessage(Message.IncrementIfSameHotkey, (int)currentProfile.incrementHotkey.keys);
         }
 
         private void DecrementHook_KeyPressed(object sender, KeyPressedEventArgs e)
         {
             IncrementCounter(-currentProfile.incrementAmount);
+            rcm.BroadcastMessage(Message.DecrementIfSameHotkey, (int)currentProfile.decrementHotkey.keys);
         }
 
         List<KeyCombination> OccupiedKeys
@@ -1642,8 +1681,8 @@ namespace PokeCounter
 
                 foreach (var window in rcm.AllWindows)
                 {
-                    keys.Add(rcm.Query<KeyCombination>(window, Query.GetIncrementKey));
-                    keys.Add(rcm.Query<KeyCombination>(window, Query.GetDecrementKey));
+                    //keys.Add(rcm.Query<KeyCombination>(window, Query.GetIncrementKey));
+                    //keys.Add(rcm.Query<KeyCombination>(window, Query.GetDecrementKey));
                 }
 
                 var commands = Commands.CustomCommands.GetAllCommands();
@@ -1717,7 +1756,7 @@ namespace PokeCounter
                     rpcClient.SetPresence(new RichPresence()
                     {
                         Details = "Counting multiple pokemon",
-                        
+
                         Timestamps = new Timestamps(lastLoadedTime),
                         Assets = new Assets()
                         {
@@ -1951,9 +1990,9 @@ namespace PokeCounter
             PushChange();
         }
 
-        private void IncrementCounter(int delta)
+        private void IncrementCounter(int delta, bool muted = false)
         {
-            if (delta > 0 && metaSettings.data.playAudio)
+            if (delta > 0 && metaSettings.data.playAudio && !muted)
             {
                 incrementSound.Stop();
                 incrementSound.Play();
@@ -2475,38 +2514,11 @@ namespace PokeCounter
             listEntries.Add(new KeybindingWrapper(
                 "Increment",
                 currentProfile.incrementHotkey, defaultProfile.incrementHotkey,
-                (kc) => { currentProfile.incrementHotkey = kc; },
-                (KeyCombination kc, out string reason) =>
-                {
-                    KeyboardHook hook = new KeyboardHook();
-                    if (!hook.RegisterHotKey(kc.modifierKeys, kc.keys, false))
-                    {
-                        reason = "Hotkey already registered!";
-                        hook.Dispose();
-                        return false;
-                    }
-                    reason = "Valid";
-                    hook.Dispose();
-                    return true;
-                }
-                ));
+                (kc) => { currentProfile.incrementHotkey = kc; }));
             listEntries.Add(new KeybindingWrapper(
                 "Decrement",
                 currentProfile.decrementHotkey, defaultProfile.decrementHotkey,
-                (kc) => { currentProfile.decrementHotkey = kc; },
-                (KeyCombination kc, out string reason) =>
-                {
-                    KeyboardHook hook = new KeyboardHook();
-                    if (!hook.RegisterHotKey(kc.modifierKeys, kc.keys, false))
-                    {
-                        reason = "Hotkey already registered!";
-                        hook.Dispose();
-                        return false;
-                    }
-                    reason = "Valid";
-                    hook.Dispose();
-                    return true;
-                }));
+                (kc) => { currentProfile.decrementHotkey = kc; }));
 
             listEntries.Add(new Separator());
 
@@ -2584,13 +2596,18 @@ namespace PokeCounter
 
             PressAnyButtonPopup popup = new PressAnyButtonPopup($"Rebind commands", OccupiedKeys, listEntries);
 
+            rcm.BroadcastMessage(Message.DisableHotkeys);
+
             if (popup.ShowDialog().GetValueOrDefault(false))
             {
                 KeybindingsUpdated();
                 metaSettings.Save();
+                rcm.BroadcastMessage(Message.RefreshHotkeyBindings);
             }
 
-            RegisterHotkeys();
+            rcm.BroadcastMessage(Message.EnableHotkeys);
+
+            RegisterHotkeys(false);
         }
 
         private void AudioFileOption_Click(object sender, RoutedEventArgs e)
