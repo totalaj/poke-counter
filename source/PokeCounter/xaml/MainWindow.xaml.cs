@@ -670,6 +670,11 @@ namespace PokeCounter
                         IncrementCounter(currentProfile.incrementAmount);
                         break;
                     }
+                case Message.GetValue:
+                    {
+                        handled = true;
+                        return new IntPtr(currentProfile.count);
+                    }
                 case Message.Decrement:
                     {
                         handled = true;
