@@ -156,9 +156,9 @@ namespace PokeCounter
             if (currentProfile == null)
             {
                 InitializeFromProfile(CounterProfile.CreateDefault(), true, false);
-                lastLoadedTime = DateTime.UtcNow;
             }
 
+            lastLoadedTime = DateTime.UtcNow;
             undoList.PushChange(currentProfile);
 
             new DispatcherTimer(
